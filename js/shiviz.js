@@ -244,7 +244,7 @@ Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortTy
         // if (regexpString == "")
         //     throw new Exception("The parser regexp field must not be empty.", true);
 
-        console.log("Regexp string is ", regexpString)
+        // console.log("Regexp string is ", regexpString)
 
         var regexp = new NamedRegExp(regexpString, "m");
         // Log goes to here

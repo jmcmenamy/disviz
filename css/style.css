@@ -975,7 +975,10 @@ svg#defs {
 
 /* Popup dialog */
 .dialog {
-  width: 200px;
+  width: 50vw;
+  overflow-y: auto;
+  max-height: 50vh;
+  overflow-x: scroll;
   background: #eee;
   font-family: sans-serif;
   position: absolute;

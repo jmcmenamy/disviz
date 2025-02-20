@@ -721,6 +721,7 @@ Controller.prototype.showDialog = function(e, type, elem) {
         // Add fields, if normal node
         var fields = e.getNode().getLogEvents()[0].getFields();
         for (var i in fields) {
+            console.log(`field is ${i} and val is ${fields[i]}`)
             var $f = $("<tr>", {
                 "class": "field"
             });

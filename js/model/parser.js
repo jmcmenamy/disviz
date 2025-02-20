@@ -159,7 +159,7 @@ function ExecutionParser(rawString, label, regexp) {
             fields[name] = match[name];
         });
 
-        var timestamp = parseTimestamp(clock, host, ln);
+        var timestamp = parseStringTimestamp(clock, host, ln);
         this.timestamps.push(timestamp);
         this.logEvents.push(new LogEvent(event, timestamp, ln, fields));
     }
@@ -167,11 +167,12 @@ function ExecutionParser(rawString, label, regexp) {
     if (this.logEvents.length == 0)
         throw new Exception("The parser RegExp you entered does not capture any events for the execution " + label, true);
 
-    function parseTimestamp(clockString, hostString, line) {
+    function parseStringTimestamp(clockString, hostString, line) {
         try {
             // Attempt to parse a clockString as plain JSON
             clock = JSON.parse(clockString);
         } catch (err1) {
+            console.log("GOT ERR HERE", err1, clockString)
             try {
                 // Corner-case, attempt to interpret as JSON escaped with quotes
                 // Added to support TLA+ syntax: {\"w1\":1,\"w2\":1}
@@ -194,7 +195,11 @@ function ExecutionParser(rawString, label, regexp) {
                 throw exception;
             }
         }
-        
+    
+        parseJsonTimestamp(clock, hostString)
+    }
+
+    function parseJsonTimestamp(clock, hostString) {
         try {
             var ret = new VectorTimestamp(clock, hostString);
             return ret;
@@ -209,7 +214,7 @@ function ExecutionParser(rawString, label, regexp) {
 
     function parseZapLogs(timestamps, logEvents) {
         // Split log data into individual lines
-        console.log("got here, raw string is", rawString)
+        // console.log("got here, raw string is", rawString)
         const logLines = rawString.trim().split("\n");
 
         for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
@@ -225,12 +230,12 @@ function ExecutionParser(rawString, label, regexp) {
             // console.log("Log Entry:");
             Object.entries(logObject).forEach(([key, value]) => {
                 // console.log(`${key}:`, value);
-                if (['processId', 'message', 'VCString'].includes(key)) {
+                if (!['processId', 'message', 'VCString'].includes(key)) {
                     fields[key] = value
                 }
             });
 
-            var timestamp = parseTimestamp(clock, host, ln);
+            var timestamp = parseJsonTimestamp(clock, host);
             timestamps.push(timestamp);
             logEvents.push(new LogEvent(event, timestamp, lineNum, fields));
         }
