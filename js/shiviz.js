@@ -18,7 +18,7 @@ function Shiviz() {
     }
 
     var context = this;
-    var defaultParser = "(?<event>.*)\\n(?<host>\\S*) (?<clock>{.*})";
+    var defaultParser = "";
     var defaultOrdering = "descending";
     var defaultHostSort = "#hostsortLength";
 
@@ -99,6 +99,7 @@ function Shiviz() {
     $("#versionContainer").html(versionText);
 
     $("#visualize").on("click", function() {
+        console.log('line 102?', $('#parser').val());
         context.go(2, true, true);
     });
 
@@ -240,10 +241,13 @@ Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortTy
         var delimiter = delimiterString == "" ? null : new NamedRegExp(delimiterString, "m");
         regexpString = regexpString.trim();
 
-        if (regexpString == "")
-            throw new Exception("The parser regexp field must not be empty.", true);
+        // if (regexpString == "")
+        //     throw new Exception("The parser regexp field must not be empty.", true);
+
+        console.log("Regexp string is ", regexpString)
 
         var regexp = new NamedRegExp(regexpString, "m");
+        // Log goes to here
         var parser = new LogParser(log, delimiter, regexp);
 
         var hostPermutation = null;
@@ -357,6 +361,7 @@ Shiviz.prototype.go = function(index, store, force) {
         case 2:
             $(".visualization").show();
             try {
+                console.log('here?', $('#parser').val())
                 if (!$("#vizContainer svg").length || force)
                     this.visualize($("#input").val(), $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val().trim(), $("#ordering option:selected").val().trim() == "descending");
             } catch(e) {

@@ -48,7 +48,7 @@ function LogParser(rawString, delimiter, regexp) {
     this.executions = {};
 
     var names = this.regexp.getNames();
-    if (names.indexOf("clock") < 0 || names.indexOf("host") < 0 || names.indexOf("event") < 0) {
+    if (!this.regexp.isZap() && (names.indexOf("clock") < 0 || names.indexOf("host") < 0 || names.indexOf("event") < 0)) {
         var e = new Exception("The parser RegExp you entered does not have the necessary named capture groups.\n", true);
         e.append("Please see the documentation for details.");
         throw e;
@@ -84,7 +84,7 @@ function LogParser(rawString, delimiter, regexp) {
 
 /**
  * Gets all of the labels of the executions. The ordering of labels in the
- * returned array is guarenteed to be the same as the order in which they are
+ * returned array is guaranteed to be the same as the order in which they are
  * encountered in the raw log text
  * 
  * @returns {Array<String>} An array of all the labels.
@@ -132,6 +132,15 @@ function ExecutionParser(rawString, label, regexp) {
 
     /** @private */
     this.logEvents = [];
+
+    if (regexp.isZap()) {
+        parseZapLogs(this.timestamps, this.logEvents);
+
+        if (this.logEvents.length == 0) {
+            throw new Exception("The zap log file you entered does not capture any events for the execution " + label, true);
+        }
+        return
+    }
 
     var match;
     while (match = regexp.exec(rawString)) {
@@ -195,6 +204,35 @@ function ExecutionParser(rawString, label, regexp) {
             exception.append(clockString, "code");
             exception.setUserFriendly(true);
             throw exception;
+        }
+    }
+
+    function parseZapLogs(timestamps, logEvents) {
+        // Split log data into individual lines
+        console.log("got here, raw string is", rawString)
+        const logLines = rawString.trim().split("\n");
+
+        for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
+            const line = logLines[lineNum];
+            const logObject = JSON.parse(line); // Parse JSON line
+
+            const fields = {};
+
+            const host = logObject.processId
+            const event = logObject.message
+            const clock = logObject.VCString
+
+            // console.log("Log Entry:");
+            Object.entries(logObject).forEach(([key, value]) => {
+                // console.log(`${key}:`, value);
+                if (['processId', 'message', 'VCString'].includes(key)) {
+                    fields[key] = value
+                }
+            });
+
+            var timestamp = parseTimestamp(clock, host, ln);
+            timestamps.push(timestamp);
+            logEvents.push(new LogEvent(event, timestamp, lineNum, fields));
         }
     }
 

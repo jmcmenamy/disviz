@@ -12,6 +12,15 @@
  *            case-insensitive
  */
 function NamedRegExp(regexp, flags) {
+    let isZapLog = false
+    if (regexp === "") {
+        console.log("Empty regex, assuming zap")
+        this.isZapLog = true
+        return
+    }
+    /** @private */
+    this.isZapLog = isZapLog
+
     var match, names = [];
     flags = flags || "";
 
@@ -102,4 +111,13 @@ NamedRegExp.prototype.test = function(string) {
  */
 NamedRegExp.prototype.getNames = function() {
     return this.names;
+};
+
+/**
+ * Gets array of capture group labels
+ * 
+ * @returns {Boolean} Whether or not this NamedRegExp was created for use in logs created by Zap
+ */
+NamedRegExp.prototype.isZap = function() {
+    return this.isZapLog;
 };
