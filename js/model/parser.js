@@ -233,6 +233,10 @@ function ExecutionParser(rawString, label, regexp) {
                 if (!['processId', 'message', 'VCString'].includes(key)) {
                     fields[key] = value
                 }
+                // if (key === 'stacktrace') {
+                //     console.log('stackstrace');
+                //     console.log(JSON.stringify(value))
+                // }
             });
 
             var timestamp = parseJsonTimestamp(clock, host);

@@ -912,7 +912,8 @@ svg {
   border-spacing: 0;
   border-collapse: collapse;
   display: block;
-  overflow: hidden;
+  overflow-x: scroll;
+  overflow-y: scroll;
 }
 
 #sidebar .fields .title, .dialog .info .title {
@@ -924,7 +925,8 @@ svg {
 
 #sidebar .fields .value, .dialog .info .value {
   /*word-break: break-all;*/
-  overflow: hidden;
+  overflow-x: scroll;
+  overflow-y: scroll;
   text-overflow: ellipsis;
 }
 
@@ -953,7 +955,9 @@ svg {
 }
 #sidebar .info {
   height: 12em;
-  overflow: auto;
+  overflow-x: scroll;
+  overflow-y: scroll;
+  white-space: pre-wrap;
 }
 #sidebar .event {
   word-break: break-all;
@@ -976,13 +980,14 @@ svg#defs {
 /* Popup dialog */
 .dialog {
   width: 50vw;
-  overflow-y: auto;
+  overflow-y: scroll;
   max-height: 50vh;
   overflow-x: scroll;
   background: #eee;
   font-family: sans-serif;
   position: absolute;
-  z-index: 2;
+  z-index: 4;
+  white-space: pre-wrap;
   display: none;
 }
 .dialog.host {
