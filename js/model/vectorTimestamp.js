@@ -24,6 +24,7 @@ function VectorTimestamp(clock, host) {
     this.host = host;
 
     /** @private */
+    // console.log("HERE?", clock)
     this.ownTime = clock[this.host];
 
     if (!clock.hasOwnProperty(host)) {

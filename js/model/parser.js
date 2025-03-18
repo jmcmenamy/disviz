@@ -199,14 +199,15 @@ function ExecutionParser(rawString, label, regexp) {
         parseJsonTimestamp(clock, hostString)
     }
 
-    function parseJsonTimestamp(clock, hostString) {
+    function parseJsonTimestamp(clock, hostString, line) {
         try {
             var ret = new VectorTimestamp(clock, hostString);
             return ret;
         }
         catch (exception) {
+            console.log(exception, typeof exception)
             exception.prepend("An error occured while trying to parse the vector timestamp on line " + (line + 1) + ":\n\n");
-            exception.append(clockString, "code");
+            exception.append(JSON.stringify(clock), "code");
             exception.setUserFriendly(true);
             throw exception;
         }
@@ -227,6 +228,8 @@ function ExecutionParser(rawString, label, regexp) {
             const event = logObject.message
             const clock = logObject.VCString
 
+            // console.log(clock, lineNum)
+
             // console.log("Log Entry:");
             Object.entries(logObject).forEach(([key, value]) => {
                 // console.log(`${key}:`, value);
@@ -239,7 +242,7 @@ function ExecutionParser(rawString, label, regexp) {
                 // }
             });
 
-            var timestamp = parseJsonTimestamp(clock, host);
+            var timestamp = parseJsonTimestamp(clock, host, line);
             timestamps.push(timestamp);
             logEvents.push(new LogEvent(event, timestamp, lineNum, fields));
         }
