@@ -98,8 +98,10 @@ function Shiviz() {
 
     $("#versionContainer").html(versionText);
 
-    $("#visualize").on("click", function() {
+    $("#visualize").on("click", async function() {
         console.log('line 102?', $('#parser').val());
+        await handleFilePath();
+        console.log("handled filepath");
         context.go(2, true, true);
     });
 
@@ -113,18 +115,13 @@ function Shiviz() {
     });
 
     // Clears the file input value whenever 'Choose File' is clicked
-    $("#file").on("click", function() {
-       this.value = "";
-    });
-    
-    $("#file").on("change", function(e) {
-        $(".notification_text").hide();
-       var file = e.target.files[0];
-       var reader = new FileReader();
-       
-       reader.onload = function(e) {   
+    // $("#file").on("click", function() {
+    //    this.value = "";
+    // });
+
+    function handleFileInput(text) {
           // Get the text string containing the file's data
-          var text = reader.result;
+          //   var text = reader.result;
           // Split the text string by the new line character 
           // to get the first 2 lines as substrings in an array
           var lines = text.split("\n",2);
@@ -166,17 +163,94 @@ function Shiviz() {
           $("#input").val(text.substr(startOfLog + 1));
           
           context.resetView();
-          $("#visualize").click();
-          
-          // Clears the file input value whenever the log text area or regular expression
-          // fields are modified
-          $("#input, #parser, #delimiter").on("input", function() {
-             $("#file").replaceWith($("#file").clone(true));
-          });
-       }
+    }
+
+    async function handleFilePath() {
+        // Request data from server
+        let { promise, resolve, reject } = Promise.withResolvers();
+        const requestId = generateRequestId();
+        const message = {
+          id: requestId,
+          type: "filePathRequest",
+          filePath: $("#file").val(),
+          // Arbitrarily request 200 lines assuming around 1605 bytes/line
+          numBytes: 321000,
+        };
+        // Save the resolver so we can call it when the response comes back.
+        pendingRequests[requestId] = { resolve, reject };
+        setTimeout(() => {
+            if (pendingRequests[message.id]) {
+                pendingRequests[message.id].reject("Response not received from server with 3 seconds");
+                delete pendingRequests[message.id];
+            }
+        }, 10000);
+        console.log("Sending request", message);
+        ws.send(JSON.stringify(message));
+        const logs = (await promise).logs;
+        console.log("Got response");
+        handleFileInput(logs);
+    }
+    
+    // $("#file").on("change", function(e) {
+    //     $(".notification_text").hide();
+    // //    var file = e.target.files[0];
+    // //    var reader = new FileReader();
        
-       reader.readAsText(file);
-    });
+    //    reader.onload = function(e) {   
+    //       // Get the text string containing the file's data
+    //       var text = reader.result;
+    //       // Split the text string by the new line character 
+    //       // to get the first 2 lines as substrings in an array
+    //       var lines = text.split("\n",2);
+          
+    //       var defaultOrdering = "descending";
+         
+    //       // If the first line is not empty and not just white space, 
+    //       // set it as the 'log parsing regular expression' value  by 
+    //       // inserting ^ to beginning and $ to consider the leading characters 
+    //       // and garbage between entries. If the character is inserted, then show the
+    //       // notification message.
+    //       if (lines[0].trim()) { 
+    //             $("#parser").val("^" + lines[0] + "$");
+    //             $("#log-parsing.notification_text").show();
+    //         } else { 
+    //             $("#parser").val(defaultParser);
+    //         }
+          
+
+    //       // Set the 'multiple executions regular expression delimiter' field
+    //       // to the second line if there exists a delimeter by inserting ^ to
+    //       // beginning and $ to consider the leading characters and garbage between 
+    //       // entries. If the character is inserted, then show the notification message.
+    //       // Otherwise, pass an empty string.
+    //       if (lines[1].trim()) {
+    //             $("#delimiter").val("^" + lines[1].trim() + "$");
+    //             $("#multi-exec.notification_text").show();
+    //         } else {
+    //             $("#delimiter").val("");
+    //         }
+          
+    //       // Set the ordering of the processes to descending
+    //       $("#ordering").val(defaultOrdering);
+          
+    //       // Get the position of the new line character that occurs at the end of the second line
+    //       var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
+    //       // The log will start at the position above + 1; 
+    //       // fill in the log text area with the rest of the lines of the file
+    //       $("#input").val(text.substr(startOfLog + 1));
+          
+    //       context.resetView();
+    //       $("#visualize").click();
+          
+    //       // Clears the file input value whenever the log text area or regular expression
+    //       // fields are modified
+    //     //   $("#input, #parser, #delimiter").on("input", function() {
+    //     //      $("#file").replaceWith($("#file").clone(true));
+    //     //   });
+    //    }
+       
+    //    reader.readAsText(file);
+    // });
 
     if (window.location.hash) {
         $("#input").bind("change.hash", function () {
@@ -209,14 +283,14 @@ Shiviz.getInstance = function() {
 Shiviz.prototype.resetView = function() {
     // Enable/disable the visualize button depending on whether or not
     // the text area is empty.
-    if ($("#input").val() == "") {
-        $("#visualize").prop("disabled", true);
-        $(".icon .tabs li:last-child").addClass("disabled");
-    }
-    else {
-        $("#visualize").prop("disabled", false);
-        $(".icon .tabs li:last-child").removeClass("disabled");
-    }
+    // if ($("#file").val() == "") {
+    //     $("#visualize").prop("disabled", true);
+    //     $(".icon .tabs li:last-child").addClass("disabled");
+    // }
+    // else {
+    //     $("#file").prop("disabled", false);
+    //     $(".icon .tabs li:last-child").removeClass("disabled");
+    // }
     $(".event").text("");
     $(".fields").html("");
 

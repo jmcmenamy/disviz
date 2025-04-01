@@ -266,7 +266,7 @@
                     </header>
                     <h3>Options</h3>
                     <div id="file_input">
-                        <label>Select a file: <input type="file" id="file"></label>
+                        <label>Paste a filepath: <input class="mono" type="text" id="file"></label>
                         <span id="file_icon">d</span>
                         <div id="file_desc">Upload a log by selecting a file with the following format: <br><br>
                         <li> The first line of the file is the log parsing regular expression. If left empty, the system assumes zap was used to generate the logs with
@@ -307,7 +307,7 @@
                         <label><input id="hostsortLength" name="host_sort" type="radio" checked value="length"> # events</label>
                         <label><input id="hostsortOrder" name="host_sort" type="radio" value="order"> appearance in log</label>
                     </div>
-                    <button id="visualize" disabled>Visualize</button>
+                    <button id="visualize">Visualize</button>
                 </td>
                 <td class="right">
                     <div id="examples">

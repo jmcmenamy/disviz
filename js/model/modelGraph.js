@@ -80,8 +80,9 @@ function ModelGraph(logEvents) {
 
             for (var i = 0; i < array.length; i++) {
                 var node = array[i];
-                if (getTime(node) != i + 1) {
-                    throw i == 0 ? getStartValueException(node) : getClockIncrementException(node, array[i - 1]);
+                // we allow clocks to not start at 1 since we now view a sliding window
+                if (getTime(node) != i + 1 && i !== 0) {
+                    throw getClockIncrementException(node, array[i - 1]);
                 }
             }
 
@@ -128,6 +129,7 @@ function ModelGraph(logEvents) {
                         }
 
                         if (time < 1 || time > hostToNodes[otherHost].length) {
+                            console.log("uhh", time, hostToNodes[otherHost].length, currNode)
                             throw getOutOfBoundsTimeException(currNode, otherHost, time);
                         }
 
