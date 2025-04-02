@@ -431,6 +431,6 @@ Shiviz.prototype.handleException = function(err) {
     throw new Error(err.getMessage());
 };
 
-// $(document).ready(function() {
-//     Shiviz.instance = new Shiviz();
-// });
+$(document).ready(function() {
+    Shiviz.instance = new Shiviz();
+});

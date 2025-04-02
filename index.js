@@ -25,6 +25,19 @@ function loadGlobalScript(filename) {
   vm.runInThisContext(code, { filename: filePath });
 }
 
+// Create a Proxy using a no-op function and our handler.
+// Imported code uses these objects for front end things, so we make them chainable no-ops
+const { $, d3, document, window } = new Proxy(() => {}, {
+  // Intercepts property access, e.g. $().testing
+  get(target, prop, receiver) {
+    return receiver;
+  },
+  // Intercepts function calls, e.g. $()
+  apply() {
+    return $;
+  }
+});
+
 // load all js_server files in global context (for ease of implementation)
 for (const path of [
   "js_server/dev.js",
@@ -41,30 +54,8 @@ for (const path of [
   ]) {
   loadGlobalScript(path)
 }
-
 // console.log(ModelGraph, "testing")
-// // Example: Load multiple files whose declarations will end up in the global scope.
-// 'file1.js',// 'file2.js',
-// first create no op proxies for jquery and d3 (for ease of implementation)
-// Create a Proxy that intercepts all property accesses and function calls
-const handler = {
-  // Intercepts property access, e.g. $().testing
-  get(target, prop) {
-    return proxy;
-  },
-  // Intercepts function calls, e.g. $()
-  apply(target, thisArg, argumentsList) {
-    return proxy;
-  }
-};
 
-// Create a Proxy using the no-op function and our handler.
-// We call it "proxy" so that property accesses return the same object.
-let proxy
-proxy = new Proxy(() => proxy, handler);
-
-const $ = proxy
-const d3 = proxy
 const app = express();
 
 // Serve static files from the 'public' directory
