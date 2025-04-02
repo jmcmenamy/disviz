@@ -169,10 +169,17 @@ function Shiviz() {
         // Request data from server
         let { promise, resolve, reject } = Promise.withResolvers();
         const requestId = generateRequestId();
+        // we'll essentially completely process the file on the server side
+        // and send a sliding window for the client to view, so
+        // we send all user inputs in this request, not just the file path
         const message = {
           id: requestId,
           type: "filePathRequest",
           filePath: $("#file").val(),
+          regexpString: $("#parser").val(),
+          delimiterString: $("#delimiter").val(),
+          sortType: $("input[name=host_sort]:checked").val().trim(),
+          descending: $("#ordering option:selected").val().trim() == "descending",
           // Arbitrarily request 200 lines assuming around 1605 bytes/line
           numBytes: 321000,
         };

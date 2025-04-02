@@ -112,6 +112,8 @@ Global.NODE_STROKE_WIDTH = 2;
  * Redraws the global.
  */
 Global.prototype.drawAll = function() {
+    // server side, no drawing!
+    return;
     var global = this;
     var numViews = this.views.length;
     var searchbar = this.searchbar;

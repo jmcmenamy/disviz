@@ -348,7 +348,8 @@ SearchBar.prototype.update = function() {
  * @returns {String} The text in the search bar
  */
 SearchBar.prototype.getValue = function() {
-    return $("#searchbar #bar input").val();
+    return searchBarInput;
+    // return $("#searchbar #bar input").val();
 };
 
 /**

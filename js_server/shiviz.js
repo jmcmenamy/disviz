@@ -178,14 +178,14 @@ function Shiviz() {
        reader.readAsText(file);
     });
 
-    if (window.location.hash) {
-        $("#input").bind("change.hash", function () {
-            $("#input").unbind("change.hash");
-            $("#visualize").click();
-        });
-        var log = window.location.hash.substr(1) + ".log";
-        $("#examples a[data-log=\"" + log + "\"]").click();
-    }
+    // if (window.location.hash) {
+    //     $("#input").bind("change.hash", function () {
+    //         $("#input").unbind("change.hash");
+    //         $("#visualize").click();
+    //     });
+    //     var log = window.location.hash.substr(1) + ".log";
+    //     $("#examples a[data-log=\"" + log + "\"]").click();
+    // }
 }
 
 /**

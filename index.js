@@ -17,13 +17,6 @@ import fs from 'fs';
 // const vm = require('vm');
 // const path = require('path');
 // const fs = require('fs').promises;
-function loadGlobalScript(filename) {
-  const filePath = path.join(__dirname, filename);
-  const code = fs.readFileSync(filePath, {encoding: 'utf8'} );
-  // Run the code in the current context, so any variables declared at the top level
-  // (without using module exports) will be added to the global object.
-  vm.runInThisContext(code, { filename: filePath });
-}
 
 // Create a Proxy using a no-op function and our handler.
 // Imported code uses these objects for front end things, so we make them chainable no-ops
@@ -38,27 +31,35 @@ function loadGlobalScript(filename) {
     return $;
   }
 }));
+globalThis.searchBarInput = ""
 
 // console.log($().testing().hello.testing())
 
 
-// load all js_server files in global context (for ease of implementation)
-for (const path of [
-  "js_server/dev.js",
-  "js_server/searchBar.js","js_server/clusterer.js",
-  "js_server/graph/graphEvent.js","js_server/graph/abstractGraph.js","js_server/graph/abstractNode.js","js_server/graph/graphTraversal.js","js_server/graph/dfsGraphTraversal.js",
-  "js_server/builder/builderGraph.js","js_server/builder/builderNode.js","js_server/builder/graphBuilder.js","js_server/builder/graphBuilderHost.js","js_server/builder/graphBuilderNode.js",
-  "js_server/logEventMatcher/lemAST.js","js_server/logEventMatcher/lemInterpreter.js","js_server/logEventMatcher/lemParser.js","js_server/logEventMatcher/lemToken.js","js_server/logEventMatcher/lemTokenizer.js","js_server/logEventMatcher/logEventMatcher.js",
-  "js_server/model/logEvent.js","js_server/model/modelGraph.js","js_server/model/modelNode.js","js_server/model/parser.js","js_server/model/vectorTimestamp.js","js_server/model/vectorTimestampSerializer.js",
-  "js_server/motifFinder/motif.js","js_server/motifFinder/motifFinder.js","js_server/motifFinder/motifDrawer.js","js_server/motifFinder/broadcastGatherFinder.js","js_server/motifFinder/customMotifFinder.js","js_server/motifFinder/motifGroup.js","js_server/motifFinder/motifNavigator.js","js_server/motifFinder/requestResponseFinder.js","js_server/motifFinder/textQueryMotifFinder.js",
-  "js_server/shiviz.js",
-  "js_server/transform/transformation.js","js_server/transform/collapseSequentialNodesTransformation.js","js_server/transform/hideHostTransformation.js","js_server/transform/highlightHostTransformation.js","js_server/transform/highlightMotifTransformation.js","js_server/transform/showDiffTransformation.js","js_server/transform/transformer.js",
-  "js_server/util/exception.js","js_server/util/regexp.js","js_server/util/util.js",
-  "js_server/visualization/controller.js","js_server/visualization/global.js","js_server/visualization/hostPermutation.js","js_server/visualization/layout.js","js_server/visualization/view.js","js_server/visualization/visualEdge.js","js_server/visualization/visualGraph.js","js_server/visualization/visualNode.js","js_server/visualization/abbreviation.js",
-  ]) {
-  loadGlobalScript(path)
+function loadGlobalScript(filename) {
+  const filePath = path.join(__dirname, filename);
+  const code = fs.readFileSync(filePath, {encoding: 'utf8'} );
+  // Run the code in the current context, so any variables declared at the top level
+  // (without using module exports) will be added to the global object.
+  vm.runInThisContext(code, { filename: filePath });
 }
+
+// load all js_server files in global context (for ease of implementation)
+[
+  "js_server/shiviz.js", "js_server/dev.js", "js_server/searchBar.js", "js_server/clusterer.js",
+  "js_server/graph/graphEvent.js", "js_server/graph/abstractGraph.js", "js_server/graph/abstractNode.js", "js_server/graph/graphTraversal.js", "js_server/graph/dfsGraphTraversal.js",
+  "js_server/builder/builderGraph.js", "js_server/builder/builderNode.js", "js_server/builder/graphBuilder.js", "js_server/builder/graphBuilderHost.js", "js_server/builder/graphBuilderNode.js",
+  "js_server/logEventMatcher/lemAST.js", "js_server/logEventMatcher/lemInterpreter.js", "js_server/logEventMatcher/lemParser.js", "js_server/logEventMatcher/lemToken.js", "js_server/logEventMatcher/lemTokenizer.js", "js_server/logEventMatcher/logEventMatcher.js",
+  "js_server/model/logEvent.js", "js_server/model/modelGraph.js", "js_server/model/modelNode.js", "js_server/model/parser.js", "js_server/model/vectorTimestamp.js", "js_server/model/vectorTimestampSerializer.js",
+  "js_server/motifFinder/motif.js", "js_server/motifFinder/motifFinder.js", "js_server/motifFinder/motifDrawer.js", "js_server/motifFinder/broadcastGatherFinder.js", "js_server/motifFinder/customMotifFinder.js", "js_server/motifFinder/motifGroup.js", "js_server/motifFinder/motifNavigator.js", "js_server/motifFinder/requestResponseFinder.js", "js_server/motifFinder/textQueryMotifFinder.js",
+  "js_server/transform/transformation.js", "js_server/transform/collapseSequentialNodesTransformation.js", "js_server/transform/hideHostTransformation.js", "js_server/transform/highlightHostTransformation.js", "js_server/transform/highlightMotifTransformation.js", "js_server/transform/showDiffTransformation.js", "js_server/transform/transformer.js",
+  "js_server/util/exception.js", "js_server/util/regexp.js", "js_server/util/util.js",
+  "js_server/visualization/controller.js", "js_server/visualization/global.js", "js_server/visualization/hostPermutation.js", "js_server/visualization/layout.js", "js_server/visualization/view.js", "js_server/visualization/visualEdge.js", "js_server/visualization/visualGraph.js", "js_server/visualization/visualNode.js", "js_server/visualization/abbreviation.js",
+].forEach(path => loadGlobalScript(path));
 // console.log(ModelGraph, "testing")
+
+// global singleton shiviz instance
+Shiviz.instance = new Shiviz();
 
 const app = express();
 
@@ -66,8 +67,12 @@ const app = express();
 app.use(express.static(__dirname));
 
 // defines the file that will be continuously read from
-let filehandle = undefined
-let stats = undefined
+let filehandle = undefined;
+let delimiterString = undefined;
+let regexpString = undefined;
+let sortType = undefined;
+let descending = undefined;
+let stats = undefined;
 
 const server = http.createServer(app);
 
@@ -83,16 +88,16 @@ wss.on('connection', (ws) => {
         const message = JSON.parse(event);
         switch (message.type) {
             case "filePathRequest":
-                console.log("Got filePathRequest", message)
-                await setNewFile(message.filePath)
+                console.log("Got filePathRequest", message);
+                await setNewFile(message);
                 ws.send(JSON.stringify({
                   id: message.id,
-                  logs: await newFile(0, message.numBytes)
+                  logs: await slideWindow(0, message.numBytes)
                 }), (err) => {
                   if (err === null) {
                     return
                   }
-                  console.log("Got err when sending response: ", err)
+                  console.log("Got err when sending response: ", err);
                 })
         }
       } catch (err) {
@@ -109,14 +114,27 @@ wss.on('connection', (ws) => {
   });
 });
 
-async function setNewFile(filename) {
+async function setNewFile(message) {
+
+  // first we'll set all the global variable
+  console.log("desc is ", message.descending.type, message.descending, typeof message.descending)
+  const filename = message.filePath;
+  regexpString = message.regexpString;
+  delimiterString = message.delimiterString;
+  sortType = message.sortType;
+  descending = message.descending;
   if (filehandle !== undefined) {
-    await filehandle.close()
+    await filehandle.close();
   }
-  const fileText = fs.readFileSync(filename, { encoding: 'utf8' })
+  // need to sort it and write it back so we only ever send valid subsets of the log events
+
+
+  const fileText = await fs.promises.readFile(filename, { encoding: 'utf-8'});
+
+  Shiviz.getInstance().visualize(fileText, regexpString, delimiterString, sortType, descending);
+
   filehandle = await fs.promises.open(filename, 'r');
   stats = await filehandle.stat();
-  // need to sort it and write it back so we only ever send valid subsets of the log events
 }
 
 /**
@@ -129,7 +147,7 @@ async function setNewFile(filename) {
  * @param {number} endOffset - The desired ending byte offset.
  * @returns {Promise<string>} - Resolves to the file data as a UTF-8 string containing complete lines.
  */
-async function newFile(startOffset, endOffset) {
+async function slideWindow(startOffset, endOffset) {
   // Open the file for reading.
   // const filehandle = await fs.open(filename, 'r');
   // const stats = await filehandle.stat();
