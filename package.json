@@ -1,6 +1,7 @@
 {
   "name": "shiviz",
   "version": "1.0.0",
+  "type": "module",
   "description": "A debugging tool for distributed systems",
   "main": "index.js",
   "directories": {
