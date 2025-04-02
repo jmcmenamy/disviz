@@ -27,7 +27,8 @@ function loadGlobalScript(filename) {
 
 // Create a Proxy using a no-op function and our handler.
 // Imported code uses these objects for front end things, so we make them chainable no-ops
-const { $, d3, document, window } = new Proxy(() => {}, {
+['$', 'd3', 'window', 'document'].reduce(
+  (proxy, prop) => globalThis[prop] = proxy, new Proxy(() => {}, {
   // Intercepts property access, e.g. $().testing
   get(target, prop, receiver) {
     return receiver;
@@ -36,7 +37,10 @@ const { $, d3, document, window } = new Proxy(() => {}, {
   apply() {
     return $;
   }
-});
+}));
+
+// console.log($().testing().hello.testing())
+
 
 // load all js_server files in global context (for ease of implementation)
 for (const path of [
