@@ -14,8 +14,9 @@
  * @param {Number} lineNum the line number of the event in the log
  * @param {?Object<String, String>} [fields={}] a mapping of field names to
  *            field values extracted using regex.
+ * @param {String} logLine the raw line from the log file
  */
-function LogEvent(text, vectorTimestamp, lineNum, fields) {
+function LogEvent(text, vectorTimestamp, lineNum, fields, logLine) {
     /** @private */
     this.id = LogEvent.id++;
 
@@ -30,6 +31,9 @@ function LogEvent(text, vectorTimestamp, lineNum, fields) {
 
     /** @private */
     this.lineNum = lineNum;
+
+    /** @private */
+    this.logLine = logLine;
 
     /** @private */
     this.fields = Util.objectShallowCopy(fields) || {};
@@ -87,6 +91,15 @@ LogEvent.prototype.getVectorTimestamp = function() {
  */
 LogEvent.prototype.getLineNumber = function() {
     return this.lineNum;
+};
+
+/**
+ * Returns the raw log line associated with this LogEvent
+ * 
+ * @returns {String} the log line
+ */
+LogEvent.prototype.getLogLine = function() {
+    return this.logLine;
 };
 
 /**

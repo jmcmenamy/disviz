@@ -18,9 +18,18 @@ function Shiviz() {
     }
 
     var context = this;
-    var defaultParser = "";
-    var defaultOrdering = "descending";
-    var defaultHostSort = "#hostsortLength";
+    this.defaultParser = "";
+    this.defaultOrdering = "descending";
+    this.defaultHostSort = "#hostsortLength";
+    // empirical
+    this.bytesPerLine = 1605;
+    this.startingOffset = 0;
+    // Arbitrarily request 400 lines assuming around 1605 bytes/line at the start
+    this.endingOffset = 400*this.bytesPerLine;
+    this.atEndOfFile = false;
+    this.slideWindowRequestPending = false;
+    this.currentFileName = undefined;
+    this.currentFileSize = undefined;
 
     $(".input input, .input textarea").on('input propertychange', function(e) {
         context.resetView();
@@ -60,9 +69,11 @@ function Shiviz() {
         $("#input").val(response);
         context.resetView();
         $("#delimiter").val($(e.target).data("delimiter"));
-        $("#parser").val($(e.target).data("parser") || defaultParser);
-        $("#ordering").val($(e.target).data("ordering") || defaultOrdering);
-        $($(e.target).data("hostsort") || defaultHostSort).prop("checked", true);
+        $("#parser").val($(e.target).data("parser") || context.defaultParser);
+        console.log("Setting ordering val to ", $(e.target).data("ordering") || context.defaultOrdering);
+        $("#ordering").val($(e.target).data("ordering") || context.defaultOrdering);
+        console.log("Ordering set to ", $("#ordering").val());
+        $($(e.target).data("hostsort") || context.defaultHostSort).prop("checked", true);
         // Clears the file input value by replacing the file input component with a clone
         $("#file").replaceWith($("#file").clone(true));
 
@@ -119,15 +130,16 @@ function Shiviz() {
     //    this.value = "";
     // });
 
-    function handleFileInput(text) {
+    function handleFileInput(response) {
           // Get the text string containing the file's data
           //   var text = reader.result;
           // Split the text string by the new line character 
           // to get the first 2 lines as substrings in an array
+          context.startingOffset = response.startOffset;
+          context.endingOffset = response.endOffset;
+          const text = response.logs;
           var lines = text.split("\n",2);
-          
-          var defaultOrdering = "descending";
-         
+                   
           // If the first line is not empty and not just white space, 
           // set it as the 'log parsing regular expression' value  by 
           // inserting ^ to beginning and $ to consider the leading characters 
@@ -137,7 +149,7 @@ function Shiviz() {
                 $("#parser").val("^" + lines[0] + "$");
                 $("#log-parsing.notification_text").show();
             } else { 
-                $("#parser").val(defaultParser);
+                $("#parser").val(context.defaultParser);
             }
           
 
@@ -154,7 +166,9 @@ function Shiviz() {
             }
           
           // Set the ordering of the processes to descending
-          $("#ordering").val(defaultOrdering);
+          console.log("Setting ordering val to ", context.defaultOrdering);
+          $("#ordering").val(context.defaultOrdering);
+          console.log("Ordering set to ", $("#ordering").val());
           
           // Get the position of the new line character that occurs at the end of the second line
           var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
@@ -169,19 +183,19 @@ function Shiviz() {
         // Request data from server
         let { promise, resolve, reject } = Promise.withResolvers();
         const requestId = generateRequestId();
+        context.currentFileName = $("#file").val();
         // we'll essentially completely process the file on the server side
         // and send a sliding window for the client to view, so
         // we send all user inputs in this request, not just the file path
         const message = {
           id: requestId,
           type: "filePathRequest",
-          filePath: $("#file").val(),
+          filePath: context.currentFileName,
           regexpString: $("#parser").val(),
           delimiterString: $("#delimiter").val(),
           sortType: $("input[name=host_sort]:checked").val().trim(),
           descending: $("#ordering option:selected").val().trim() == "descending",
-          // Arbitrarily request 200 lines assuming around 1605 bytes/line
-          numBytes: 321000,
+          numBytes: context.endingOffset,
         };
         // Save the resolver so we can call it when the response comes back.
         pendingRequests[requestId] = { resolve, reject };
@@ -193,9 +207,13 @@ function Shiviz() {
         }, 10000);
         console.log("Sending request", message);
         ws.send(JSON.stringify(message));
-        const logs = (await promise).logs;
+        const response = await promise;
         console.log("Got response");
-        handleFileInput(logs);
+        // TODO normalize filePath vs filename
+        context.currentFileSize = response.fileSize;
+        context.currentFileName = response.filePath;
+        console.log("Set file size to", context.currentFileSize, Shiviz.getInstance().currentFileSize)
+        handleFileInput(response);
     }
     
     // $("#file").on("change", function(e) {
@@ -210,7 +228,7 @@ function Shiviz() {
     //       // to get the first 2 lines as substrings in an array
     //       var lines = text.split("\n",2);
           
-    //       var defaultOrdering = "descending";
+    //       var this.defaultOrdering = "descending";
          
     //       // If the first line is not empty and not just white space, 
     //       // set it as the 'log parsing regular expression' value  by 
@@ -221,7 +239,7 @@ function Shiviz() {
     //             $("#parser").val("^" + lines[0] + "$");
     //             $("#log-parsing.notification_text").show();
     //         } else { 
-    //             $("#parser").val(defaultParser);
+    //             $("#parser").val(this.defaultParser);
     //         }
           
 
@@ -238,7 +256,7 @@ function Shiviz() {
     //         }
           
     //       // Set the ordering of the processes to descending
-    //       $("#ordering").val(defaultOrdering);
+    //       $("#ordering").val(this.defaultOrdering);
           
     //       // Get the position of the new line character that occurs at the end of the second line
     //       var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
@@ -442,7 +460,7 @@ Shiviz.prototype.go = function(index, store, force) {
         case 2:
             $(".visualization").show();
             try {
-                console.log('here?', $('#parser').val())
+                console.log('here?', $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val(), $("#ordering option:selected").val(), "confused");
                 if (!$("#vizContainer svg").length || force)
                     this.visualize($("#input").val(), $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val().trim(), $("#ordering option:selected").val().trim() == "descending");
             } catch(e) {

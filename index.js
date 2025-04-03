@@ -11,6 +11,7 @@ import { WebSocketServer } from 'ws';
 import * as vm from 'vm'
 import * as path from 'path'
 import fs from 'fs';
+import assert from 'assert';
 // const express = require('express');
 // const http = require('http');
 // const WebSocket = require('ws');
@@ -67,6 +68,7 @@ const app = express();
 app.use(express.static(__dirname));
 
 // defines the file that will be continuously read from
+let currentFilename = undefined;
 let filehandle = undefined;
 let delimiterString = undefined;
 let regexpString = undefined;
@@ -88,17 +90,9 @@ wss.on('connection', (ws) => {
         const message = JSON.parse(event);
         switch (message.type) {
             case "filePathRequest":
-                console.log("Got filePathRequest", message);
-                await setNewFile(message);
-                ws.send(JSON.stringify({
-                  id: message.id,
-                  logs: await slideWindow(0, message.numBytes)
-                }), (err) => {
-                  if (err === null) {
-                    return
-                  }
-                  console.log("Got err when sending response: ", err);
-                })
+              return await handleFilePathRequest(message);
+            case "slideWindowRequest":
+              return await handleSlideWindowRequest(message);
         }
       } catch (err) {
         console.error("Error parsing message:", err);
@@ -112,13 +106,60 @@ wss.on('connection', (ws) => {
   ws.on('error', (error) => {
     console.error('WebSocket error:', error);
   });
+
+
+  async function handleFilePathRequest(message) {
+    console.log("Got filePathRequest", message);
+    await setNewFile(message);
+    // TODO: Send the filesize so they know ending offset,
+    // TODO: Send the new starting and ending offsets
+    const { bytesRead, logs } = await slideWindow(0, message.numBytes);
+    console.log("For filesize returning ", stats.size)
+    ws.send(JSON.stringify({
+      id: message.id,
+      logs: logs,
+      filePath: currentFilename,
+      fileSize: stats.size,
+      startOffset: 0,
+      endOffset: bytesRead,
+    }), (err) => {
+      if (err === null) {
+        return
+      }
+      console.log("Got err when sending response: ", err);
+    })
+  }
+  
+  async function handleSlideWindowRequest(message) {
+    console.log("Got slideWindowRequest", message);
+    assert(message.filePath === currentFilename, `Expected ${currentFilename}, got ${message.filePath}`);
+  
+    const startOffset = Math.max(0, message.startOffset);
+    const endOffset = Math.min(stats.fileSize, message.endOffset);
+    // bound the offsets we look for
+    const { bytesRead, logs } = await slideWindow(
+      startOffset,
+      endOffset
+    )
+    ws.send(JSON.stringify({
+      id: message.id,
+      logs: logs,
+      startOffset: startOffset,
+      endOffset: startOffset + bytesRead
+    }), (err) => {
+      if (err === null) {
+        return
+      }
+      console.log("Got err when sending response: ", err);
+    });
+  }
 });
 
 async function setNewFile(message) {
 
   // first we'll set all the global variable
   console.log("desc is ", message.descending.type, message.descending, typeof message.descending)
-  const filename = message.filePath;
+  currentFilename = message.filePath;
   regexpString = message.regexpString;
   delimiterString = message.delimiterString;
   sortType = message.sortType;
@@ -128,13 +169,52 @@ async function setNewFile(message) {
   }
   // need to sort it and write it back so we only ever send valid subsets of the log events
 
+  // TODO update delimiterString and regexpString if needed
 
-  const fileText = await fs.promises.readFile(filename, { encoding: 'utf-8'});
+  const fileText = await fs.promises.readFile(currentFilename, { encoding: 'utf-8'});
 
+  // parse the logs like its done on the front end
   Shiviz.getInstance().visualize(fileText, regexpString, delimiterString, sortType, descending);
 
-  filehandle = await fs.promises.open(filename, 'r');
+  const hostPermutation = SearchBar.getInstance().getGlobal().getHostPermutation();
+
+  assert(hostPermutation.getGraphs().length >= 1, 'Found no graphs');
+
+  let sortedFileText = "";
+  for (const graph of hostPermutation.getGraphs()) {
+    if (sortedFileText !== "") {
+      sortedFileText += delimiterString;
+    }
+    const hosts = graph.getHosts();
+    assert(hosts.length >= 1);
+    // must call getNext first because first node is dummy node, see js_server/abstractGraph.js
+    let node = graph.getHead(hosts[0]).getNext();
+    console.log(node.logEvents.length, "log events lenght for head node")
+    for (const node of graph.getNodesTopologicallySorted()) {
+      for (const logEvent of node.getLogEvents()) {
+        sortedFileText += `${logEvent.getLogLine()}\n`
+      }
+    }
+  }
+
+
+  // TODO: Now check if this file exists before doing all this stuff
+  currentFilename = getSortedFilename(currentFilename)
+  await fs.promises.writeFile(currentFilename, `${regexpString}\n\n${sortedFileText}`, { encoding: 'utf8'});
+
+  filehandle = await fs.promises.open(currentFilename, 'r');
   stats = await filehandle.stat();
+
+  // console.log(SearchBar.getInstance().getGlobal().getHostPermutation());
+}
+
+function getSortedFilename(filename) {
+  // Insert '_sorted' before the last period if it exists
+  let lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex === -1) {
+    lastDotIndex = filename.length
+  }
+  return filename.slice(0, lastDotIndex) + '_sorted' + filename.slice(lastDotIndex);
 }
 
 /**
@@ -217,9 +297,9 @@ async function slideWindow(startOffset, endOffset) {
   // --- Read and return the data between the adjusted offsets ---
   const readLength = adjustedEnd - adjustedStart;
   const finalBuffer = Buffer.alloc(readLength);
-  await filehandle.read(finalBuffer, 0, readLength, adjustedStart);
+  const {bytesRead } = await filehandle.read(finalBuffer, 0, readLength, adjustedStart);
   console.log("Returninig");
-  return finalBuffer.toString('utf8');
+  return { bytesRead: bytesRead, logs: finalBuffer.toString('utf8')};
 }
 
 

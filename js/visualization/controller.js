@@ -570,7 +570,7 @@ Controller.prototype.bindHiddenHosts = function(host, node) {
  * @private
  * @param {Event} e The event object JQuery passes to the handler
  */
-Controller.prototype.onScroll = function(e) {
+Controller.prototype.onScroll = async function(e) {
     var x = window.pageXOffset;
     $("#hostBar, .dialog.host:not(.hidden)").css("margin-left", -x);
     $(".log").css("margin-left", x);
@@ -582,6 +582,109 @@ Controller.prototype.onScroll = function(e) {
     }
 
     this.toggleGreyHostNodes();
+
+
+    // see if we need to request more from server
+    // Use event.target to reference the scroll container
+    const shiviz = Shiviz.getInstance();
+
+    // if request is pending from previous scroll event, do nothing
+    if (shiviz.slideWindowRequestPending) {
+        console.log("returning cause request active")
+        return;
+    }
+    // wip: this scrolling stuff isn't working
+    return;
+
+    const threshold = 200; // in pixels, arbitrary
+    const container = $("#vizContainer");
+    console.log("shiviz is ", shiviz);
+    const scrollTop = container.scrollTop();
+    const clientHeight = container[0].clientHeight;
+    const scrollHeight = container[0].scrollHeight;
+    const oldStartOffset = shiviz.startingOffset;
+    const oldEndOffset = shiviz.endingOffset;
+
+    let newStartOffset = oldStartOffset;
+    let newEndOffset = oldEndOffset;
+    let shouldMakeRequest = false;
+
+    // check if the user is close to the bottom but not at bottom
+    if (
+        (scrollHeight - scrollTop - clientHeight < threshold) &&
+        (oldEndOffset < shiviz.currentFileSize)
+    ) {
+        console.log("Asking for more down");
+        // get the next 100 log events
+        const offsetChange = shiviz.bytesPerLine*100;
+        newStartOffset += offsetChange;
+        newEndOffset += offsetChange;
+        shouldMakeRequest = true;
+    }
+
+    // check if the user is close to the top but not at top
+    if (
+        (scrollTop < threshold) &&
+        (oldStartOffset > 0)
+    ) {
+        assert(!shouldMakeRequest, "Shouldn't be asking to slide up and down")
+        console.log("Asking for more up");
+        const offsetChange = shiviz.bytesPerLine*100;
+        newStartOffset -= offsetChange;
+        newEndOffset -= offsetChange;
+        shouldMakeRequest = true;
+    }
+
+    // don't need to request more logs yet
+    if (!shouldMakeRequest) {
+        console.log("not making request cause offsets", scrollHeight, scrollTop, clientHeight, scrollHeight - scrollTop - clientHeight, threshold, oldEndOffset, shiviz.currentFileSize)
+        return;
+    }
+    console.log('making request cause ', scrollHeight, scrollTop, clientHeight, scrollHeight - scrollTop - clientHeight, threshold, oldEndOffset, shiviz.currentFileSize)
+
+    console.log("Going to request more logs with these offsets: ", oldStartOffset, oldEndOffset, newStartOffset, newEndOffset)
+
+    const requestId = generateRequestId();
+    // its ok if offsets are out of bounds, server handles
+    const message = {
+        id: requestId,
+        type: "slideWindowRequest",
+        startOffset: newStartOffset,
+        endOffset: newEndOffset,
+        // just used for sanity check on server side
+        filePath: shiviz.currentFileName,
+      };
+    // Save the resolver so we can call it when the response comes back.
+    // TODO Make this request api cleaner, websocket should be an object and handle this
+    // bookkeeping
+    let { promise, resolve, reject } = Promise.withResolvers();
+    pendingRequests[requestId] = { resolve, reject };
+    setTimeout(() => {
+        if (pendingRequests[message.id]) {
+            pendingRequests[message.id].reject("Response not received from server with 3 seconds");
+            delete pendingRequests[message.id];
+        }
+    }, 10000);
+    console.log("Sending request", message);
+    ws.send(JSON.stringify(message));
+    const response = await promise;
+    shiviz.startingOffset = response.startingOffset;
+    shiviz.endingOffset = response.endingOffset;
+    const text = response.logs;
+
+    var startOfLog;
+    if (shiviz.startingOffset === 0) {
+    startOfLog = 0;
+    } else {
+    // Get the position of the new line character that occurs at the end of the second line
+    var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1) + 1;
+    }
+    // The log will start at the position above + 1; 
+    // fill in the log text area with the rest of the lines of the file
+    $("#input").val(text.substr(startOfLog));
+
+    shiviz.resetView();
+    shiviz.go(2, true, true);
 };
 
 /**

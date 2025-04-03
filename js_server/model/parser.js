@@ -244,7 +244,7 @@ function ExecutionParser(rawString, label, regexp) {
 
             var timestamp = parseJsonTimestamp(clock, host, line);
             timestamps.push(timestamp);
-            logEvents.push(new LogEvent(event, timestamp, lineNum, fields));
+            logEvents.push(new LogEvent(event, timestamp, lineNum, fields, line));
         }
     }
 

@@ -368,6 +368,15 @@ Global.prototype.setHostPermutation = function(hostPermutation) {
 };
 
 /**
+* Gets the host permutation
+*
+* @returns {HostPermutation} the host permutation
+*/
+Global.prototype.getHostPermutation = function() {
+   return this.hostPermutation;
+};
+
+/**
  * Sets the showDiff boolean value
  * @param {Boolean} showDiff
  */

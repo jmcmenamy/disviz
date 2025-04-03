@@ -73,6 +73,15 @@ HostPermutation.prototype.addGraph = function(graph) {
 };
 
 /**
+ * Get list of graphs for this hostPermutation
+ * 
+ * @returns {Array<ModelGraph>} Array of ModelGraphs
+ */
+HostPermutation.prototype.getGraphs = function() {
+    return this.graphs.slice();
+};
+
+/**
  * Gets a list of hosts in the order determined by the HostPermutation. Note
  * that you must call {@link update} to compute the ordering of hosts before
  * retrieving it with this method

@@ -3,10 +3,12 @@ let ws;
 const reconnectDelay = 3000; // Delay in milliseconds before attempting reconnection
 
 // A simple counter to generate unique request IDs.
-let requestIdCounter = 0;
-function generateRequestId() {
-    return ++requestIdCounter;
+function makeCounter() {
+  let counter = 0;
+  return () => ++counter;
 }
+let requestIdCounter = 0;
+let generateRequestId = makeCounter();
 
 // An object to store pending requests, keyed by request ID.
 const pendingRequests = {};
