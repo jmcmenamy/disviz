@@ -15,10 +15,19 @@
  */
 function ModelGraph(logEvents) {
 
+    /**
+     * @public
+     * @type { Set<ModelNode> }
+     * Set of nodes to observe with an intersection observer,
+     * to know when to ask the server for more events
+     */
+    this.nodesToObserve = new Set();
+
     AbstractGraph.call(this);
 
     // Dictionary linking host name to array of nodes
     var hostToNodes = {};
+    var hostToStartTime = {};
 
     // Set of existing hosts
     var hostSet = {};
@@ -72,18 +81,27 @@ function ModelGraph(logEvents) {
 
     // Generate linear linked list among nodes in same host
     function initPrevNext() {
+
+        let mostEvents = undefined;
+        let maxLength = -Infinity;
         for (var host in hostToNodes) {
             var array = hostToNodes[host];
             array.sort(function(a, b) {
                 return getVT(a).compareToLocal(getVT(b));
             });
 
+            let currTime;
+            if (array.length >= 1) {
+                currTime = getTime(array[0])-1;
+                hostToStartTime[host] = currTime;
+            }
             for (var i = 0; i < array.length; i++) {
                 var node = array[i];
                 // we allow clocks to not start at 1 since we now view a sliding window
-                if (getTime(node) != i + 1 && i !== 0) {
+                if (getTime(node) != currTime + 1) {
                     throw getClockIncrementException(node, array[i - 1]);
                 }
+                currTime++;
             }
 
             var lastNode = mg.hostToHead[host];
@@ -93,7 +111,25 @@ function ModelGraph(logEvents) {
                 lastNode.insertNext(newNode);
                 lastNode = newNode;
             }
+
+            if (array.length > maxLength) {
+                maxLength = array.length;
+                mostEvents = array;
+            }
         }
+
+        if (mostEvents === undefined) {
+            return;
+        }
+
+        // designate which nodes will need to be observed with intersection observer
+        const startIdx = Math.floor(mostEvents.length/4);
+        const endIdx = Math.floor(mostEvents.length*3/4);
+
+        mg.shouldObserveNode(mostEvents[1], 'top');
+        mg.shouldObserveNode(mostEvents[startIdx], 'top');
+        mg.shouldObserveNode(mostEvents[mostEvents.length-2], 'bottom');
+        mg.shouldObserveNode(mostEvents[endIdx], 'bottom');
     }
 
     // Generates parent and child connections
@@ -128,18 +164,25 @@ function ModelGraph(logEvents) {
                             throw getBadHostException(currNode, otherHost);
                         }
 
-                        if (time < 1 || time > hostToNodes[otherHost].length) {
-                            console.log("uhh", time, hostToNodes[otherHost].length, currNode)
+                        if (time < 1 || time > hostToStartTime[otherHost] + hostToNodes[otherHost].length) {
+                            // console.log("uhh", time, hostToNodes[otherHost].length, currNode)
                             throw getOutOfBoundsTimeException(currNode, otherHost, time);
                         }
 
-                        candidates.push(hostToNodes[otherHost][time - 1]);
+                        if (hostToNodes[otherHost][time - hostToStartTime[otherHost] - 1] === undefined) {
+                            // console.log("Candidate undefined", hostToStartTime, Object.keys(hostToNodes).map((host) => [host, [hostToNodes[host][0], hostToNodes[host][-1]]]), hostToStartTime[otherHost], time, time - hostToStartTime[otherHost], hostToNodes[otherHost].length)
+                        } else {
+                            candidates.push(hostToNodes[otherHost][time - hostToStartTime[otherHost]-1]);
+                        }
                     }
                 }
 
                 // Gather all candidates into connections
                 var connections = {};
                 for (var i = 0; i < candidates.length; i++) {
+                    // if (candidates[i] === undefined) {
+                    //     console.log('what? ', candidates, candidates.length)
+                    // }
                     var vt = getVT(candidates[i]);
                     var id = vt.getOwnHost() + ":" + vt.getOwnTime();
                     connections[id] = candidates[i];
@@ -293,6 +336,12 @@ ModelGraph.prototype.clone = function() {
     for (var i = 0; i < allNodes.length; i++) {
         var node = allNodes[i];
         var newNode = new ModelNode(node.getLogEvents());
+        newNode.visualNode = node.visualNode;
+        newNode.shouldObserve = node.shouldObserve;
+        newNode.nodeType = node.nodeType;
+        if (this.nodesToObserve.has(node)) {
+            newGraph.nodesToObserve.add(newNode);
+        }
         newNode.host = node.getHost();
         newNode.graph = newGraph;
         newNode.isHeadInner = node.isHeadInner;
@@ -332,3 +381,24 @@ ModelGraph.prototype.clone = function() {
 
     return newGraph;
 };
+
+/**
+ * Designate this node to observe with an intersection observer
+ * @param {ModelNode} node
+ */
+ModelGraph.prototype.shouldObserveNode = function (node, nodeType) {
+    this.nodesToObserve.add(node);
+    node.shouldObserve = true;
+    node.nodeType = nodeType;
+}
+
+/**
+ * Designate this node to observe with an intersection observer
+ * @param {ModelNode} node
+ * @param {String} nodeType top or bottom depending on node position in log events
+ */
+ModelGraph.prototype.shouldNotObserveNode = function (node) {
+    this.nodesToObserve.delete(node)
+    node.shouldObserve = false;
+    node.nodeType = nodeType
+}

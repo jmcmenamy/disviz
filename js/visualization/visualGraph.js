@@ -35,6 +35,56 @@ function VisualGraph(graph, layout, hostPermutation) {
     /** @private */
     this.links = {}; // A mapping of edge IDs to VisualEdges
 
+    /** @private */
+    this.intersectionObserver = new IntersectionObserver((entries, intersectionObserver) => {
+        // see if we need to request more from server
+        // Use event.target to reference the scroll container
+        const shiviz = Shiviz.getInstance();
+
+        // if request is pending from previous scroll event, do nothing
+        if (shiviz.slideWindowRequestPending) {
+            console.log("returning cause request active")
+            return;
+        }
+
+        let newStartOffset = shiviz.startingOffset;
+        let newEndOffset = shiviz.endingOffset;
+        if (entries.length >=2 ) {
+            return;
+        }
+
+        // element is no longer visible with viewport, ignore
+        if (!entries[0].isIntersecting) {
+            return;
+        }
+        const nodeType = entries[0].target.dataset.nodeType;
+
+        console.log("Intersecting node is ", entries[0].target);
+
+        const offsetChange = shiviz.bytesPerLine*100;
+        if (nodeType === "top") {
+            newStartOffset -= offsetChange;
+            newEndOffset -= offsetChange;
+        } else {
+            if (nodeType !== "bottom") {
+                throw new Error(`Node type is ${nodType}`)
+            }
+            newStartOffset += offsetChange;
+            newEndOffset += offsetChange;
+        }
+
+        if (newStartOffset < 0 || newEndOffset > shiviz.currentFileSize) {
+            console.log("Offsets are out of bounds, ignoring", newStartOffset, newEndOffset);
+            return;
+        }
+        shiviz.slideWindow(newStartOffset, newEndOffset);
+        // graph will be remade, so disconnect this observer
+        console.log("Disconnecting");
+        // intersectionObserver.disconnect();
+    });
+    this.intersectionObserver.observe($("#top-sentinel")[0]);
+    this.intersectionObserver.observe($("#bottom-sentinel")[0]);
+
     this.graph.addObserver(AddNodeEvent, this, function(event, g) {
         g.addVisualNodeByNode(event.getNewNode());
         g.removeVisualEdgeByNodes(event.getPrev(), event.getNext());
@@ -377,3 +427,12 @@ VisualGraph.prototype.addHiddenEdgeToFamily = function(node) {
     }
 
 };
+
+VisualGraph.prototype.observeNode = function (modelNode) {
+    modelNode.visualNode.$svg.attr('data-node-type', modelNode.nodeType);
+    this.intersectionObserver.observe(modelNode.visualNode.$svg[0]);
+}
+
+VisualGraph.prototype.unobserveNode = function (modelNode) {
+    this.intersectionObserver.unobserve(modelNode.visualNode.$svg[0]);
+}

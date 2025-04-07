@@ -70,9 +70,7 @@ function Shiviz() {
         context.resetView();
         $("#delimiter").val($(e.target).data("delimiter"));
         $("#parser").val($(e.target).data("parser") || context.defaultParser);
-        console.log("Setting ordering val to ", $(e.target).data("ordering") || context.defaultOrdering);
         $("#ordering").val($(e.target).data("ordering") || context.defaultOrdering);
-        console.log("Ordering set to ", $("#ordering").val());
         $($(e.target).data("hostsort") || context.defaultHostSort).prop("checked", true);
         // Clears the file input value by replacing the file input component with a clone
         $("#file").replaceWith($("#file").clone(true));
@@ -110,7 +108,6 @@ function Shiviz() {
     $("#versionContainer").html(versionText);
 
     $("#visualize").on("click", async function() {
-        console.log('line 102?', $('#parser').val());
         await handleFilePath();
         console.log("handled filepath");
         context.go(2, true, true);
@@ -166,13 +163,11 @@ function Shiviz() {
             }
           
           // Set the ordering of the processes to descending
-          console.log("Setting ordering val to ", context.defaultOrdering);
           $("#ordering").val(context.defaultOrdering);
-          console.log("Ordering set to ", $("#ordering").val());
           
           // Get the position of the new line character that occurs at the end of the second line
           var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
-          // The log will start at the position above + 1; 
+          // The log will start at the position above + 1;
           // fill in the log text area with the rest of the lines of the file
           $("#input").val(text.substr(startOfLog + 1));
           
@@ -181,14 +176,11 @@ function Shiviz() {
 
     async function handleFilePath() {
         // Request data from server
-        let { promise, resolve, reject } = Promise.withResolvers();
-        const requestId = generateRequestId();
         context.currentFileName = $("#file").val();
         // we'll essentially completely process the file on the server side
         // and send a sliding window for the client to view, so
         // we send all user inputs in this request, not just the file path
         const message = {
-          id: requestId,
           type: "filePathRequest",
           filePath: context.currentFileName,
           regexpString: $("#parser").val(),
@@ -197,22 +189,11 @@ function Shiviz() {
           descending: $("#ordering option:selected").val().trim() == "descending",
           numBytes: context.endingOffset,
         };
-        // Save the resolver so we can call it when the response comes back.
-        pendingRequests[requestId] = { resolve, reject };
-        setTimeout(() => {
-            if (pendingRequests[message.id]) {
-                pendingRequests[message.id].reject("Response not received from server with 3 seconds");
-                delete pendingRequests[message.id];
-            }
-        }, 10000);
-        console.log("Sending request", message);
-        ws.send(JSON.stringify(message));
+        const promise = ws.sendWithRetry(message);
         const response = await promise;
-        console.log("Got response");
         // TODO normalize filePath vs filename
         context.currentFileSize = response.fileSize;
         context.currentFileName = response.filePath;
-        console.log("Set file size to", context.currentFileSize, Shiviz.getInstance().currentFileSize)
         handleFileInput(response);
     }
     
@@ -260,7 +241,7 @@ function Shiviz() {
           
     //       // Get the position of the new line character that occurs at the end of the second line
     //       var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
-    //       // The log will start at the position above + 1; 
+    //       // The log will start at the position above + 1;
     //       // fill in the log text area with the rest of the lines of the file
     //       $("#input").val(text.substr(startOfLog + 1));
           
@@ -460,7 +441,6 @@ Shiviz.prototype.go = function(index, store, force) {
         case 2:
             $(".visualization").show();
             try {
-                console.log('here?', $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val(), $("#ordering option:selected").val(), "confused");
                 if (!$("#vizContainer svg").length || force)
                     this.visualize($("#input").val(), $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val().trim(), $("#ordering option:selected").val().trim() == "descending");
             } catch(e) {
@@ -529,6 +509,43 @@ Shiviz.prototype.handleException = function(err) {
 
     throw new Error(err.getMessage());
 };
+
+Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
+    if (this.slideWindowRequestPending) {
+        // console.log("Request already pending, returning");
+        return;
+    }
+    this.slideWindowRequestPending = true;
+
+    // its ok if offsets are out of bounds, server handles
+    const message = {
+        type: "slideWindowRequest",
+        startOffset: newStartOffset,
+        endOffset: newEndOffset,
+        // just used for sanity check on server side
+        filePath: this.currentFileName,
+      };
+    const promise = ws.sendWithRetry(message);
+    const response = await promise;
+    this.startingOffset = response.startOffset;
+    this.endingOffset = response.endOffset;
+    const text = response.logs;
+
+    var startOfLog;
+    if (this.startingOffset === 0) {
+    startOfLog = 0;
+    } else {
+    // Get the position of the new line character that occurs at the end of the second line
+    var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1) + 1;
+    }
+    // The log will start at the position above + 1;
+    // fill in the log text area with the rest of the lines of the file
+    $("#input").val(text.substr(startOfLog));
+
+    this.resetView();
+    this.go(2, true, true);
+    this.slideWindowRequestPending = false;
+}
 
 $(document).ready(function() {
     Shiviz.instance = new Shiviz();

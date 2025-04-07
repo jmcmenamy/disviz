@@ -163,6 +163,10 @@ View.prototype.hasQueryMatch = function() {
 View.prototype.draw = function(viewPosition) {
 
     this.model = this.initialModel.clone();
+    // disconnect to remove event listeners for performance
+    if (this.visualGraph !== undefined) {
+        this.visualGraph.intersectionObserver.disconnect();
+    }
     this.visualGraph = new VisualGraph(this.model, this.layout, this.hostPermutation);
     this.transformer.transform(this.visualGraph);
 
@@ -193,6 +197,7 @@ View.prototype.draw = function(viewPosition) {
     drawNodes();
     drawHosts();
     drawLogLines();
+    observeNodes();
 
     // Hide line highlight
     $(".highlight").hide();
@@ -398,6 +403,14 @@ View.prototype.draw = function(viewPosition) {
             }
         }
 
+    }
+
+    function observeNodes() {
+        for (const modelNode of view.model.nodesToObserve) {
+            // watch the svg of this node for when it enters the viewport. That's
+            // when we need to ask the server for more log events
+            view.visualGraph.observeNode(modelNode);
+        }
     }
 }
 /**

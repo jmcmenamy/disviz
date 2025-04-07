@@ -88,6 +88,7 @@ wss.on('connection', (ws) => {
     console.log("Got message")
     try {
         const message = JSON.parse(event);
+        console.log("Message is ", message)
         switch (message.type) {
             case "filePathRequest":
               return await handleFilePathRequest(message);
@@ -135,7 +136,8 @@ wss.on('connection', (ws) => {
     assert(message.filePath === currentFilename, `Expected ${currentFilename}, got ${message.filePath}`);
   
     const startOffset = Math.max(0, message.startOffset);
-    const endOffset = Math.min(stats.fileSize, message.endOffset);
+    const endOffset = Math.min(stats.size, message.endOffset);
+    console.log("Intermediate offsets", startOffset, endOffset, stats, message.endOffset);
     // bound the offsets we look for
     const { bytesRead, logs } = await slideWindow(
       startOffset,
@@ -152,6 +154,7 @@ wss.on('connection', (ws) => {
       }
       console.log("Got err when sending response: ", err);
     });
+    console.log("Send slide window response with offsets", startOffset, startOffset+ bytesRead);
   }
 });
 

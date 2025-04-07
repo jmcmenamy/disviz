@@ -747,6 +747,8 @@ svg {
 #vizContainer {
   margin-top: 4em;
   white-space: nowrap;
+  /* max-height: 100vh; */
+  overflow-y: scroll;
 }
 #vizContainer svg {
   vertical-align: top;

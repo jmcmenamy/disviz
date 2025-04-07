@@ -19,6 +19,9 @@ function VisualNode(node) {
 
     /** @private */
     this.node = node;
+
+    // for use in intersection observer
+    node.visualNode = this;
     
     /** @private */
     this.$svg = Util.svgElement("g");

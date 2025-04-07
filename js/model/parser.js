@@ -172,7 +172,6 @@ function ExecutionParser(rawString, label, regexp) {
             // Attempt to parse a clockString as plain JSON
             clock = JSON.parse(clockString);
         } catch (err1) {
-            console.log("GOT ERR HERE", err1, clockString)
             try {
                 // Corner-case, attempt to interpret as JSON escaped with quotes
                 // Added to support TLA+ syntax: {\"w1\":1,\"w2\":1}
@@ -215,7 +214,6 @@ function ExecutionParser(rawString, label, regexp) {
 
     function parseZapLogs(timestamps, logEvents) {
         // Split log data into individual lines
-        // console.log("got here, raw string is", rawString)
         const logLines = rawString.trim().split("\n");
 
         for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
@@ -228,18 +226,11 @@ function ExecutionParser(rawString, label, regexp) {
             const event = logObject.message
             const clock = logObject.VCString
 
-            // console.log(clock, lineNum)
 
-            // console.log("Log Entry:");
             Object.entries(logObject).forEach(([key, value]) => {
-                // console.log(`${key}:`, value);
                 if (!['processId', 'message', 'VCString'].includes(key)) {
                     fields[key] = value
                 }
-                // if (key === 'stacktrace') {
-                //     console.log('stackstrace');
-                //     console.log(JSON.stringify(value))
-                // }
             });
 
             var timestamp = parseJsonTimestamp(clock, host, line);

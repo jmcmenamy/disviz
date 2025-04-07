@@ -17,6 +17,29 @@ function ModelNode(logEvents) {
 
     /** @private */
     this.logEvents = logEvents.slice();
+
+    /**
+     * @public
+     * @type { AbstractNode }
+     * reference up to parent visual node for intersection observer
+     */
+    this.visualNode = undefined;
+
+    /**
+     * @public
+     * @type { Boolean }
+     * if we should observe this node for intersection with viewport to request
+     * more events from server
+     */
+    this.shouldObserve = false;
+
+    /**
+     * @public
+     * @type {String}
+     * When this node should be observed, nodeType is top when it is near the top of the
+     * graph, and bottom when it is near the bottom
+     */
+    this.nodeType = undefined;
 }
 
 // ModelNode extends AbstractNode

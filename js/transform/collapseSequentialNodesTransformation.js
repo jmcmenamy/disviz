@@ -202,6 +202,7 @@ CollapseSequentialNodesTransformation.isCollapseable = function(node, threshold)
 
 /**
  * Overrides {@link Transformation#transform}
+ * @param {ModelGraph} model
  */
 CollapseSequentialNodesTransformation.prototype.transform = function(model) {
     var graph = model.getGraph();
@@ -210,9 +211,16 @@ CollapseSequentialNodesTransformation.prototype.transform = function(model) {
         var logEvents = [];
         var hasHiddenParent = false;
         var hasHiddenChild = false;
+        let shouldObserve = false;
+        let nodeType = undefined;
 
         while (removalCount-- > 0) {
             var prev = curr.getPrev();
+            if (prev.shouldObserve) {
+                shouldObserve = true;
+                nodeType = prev.nodeType;
+            }
+
             logEvents = logEvents.concat(prev.getLogEvents().reverse());
             var removedVN = model.getVisualNodeByNode(prev);
             hasHiddenParent |= removedVN.hasHiddenParent();
@@ -223,6 +231,10 @@ CollapseSequentialNodesTransformation.prototype.transform = function(model) {
         curr.insertPrev(newNode);
 
         var visualNode = model.getVisualNodeByNode(newNode);
+        if (shouldObserve) {
+            graph.shouldObserveNode(newNode, nodeType);
+            model.observeNode(newNode);
+        }
         visualNode.setRadius(15);
         visualNode.setLabel(logEvents.length);
         visualNode.setHasHiddenParent(hasHiddenParent);

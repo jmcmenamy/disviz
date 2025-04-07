@@ -1,6 +1,7 @@
 // client.js (or inline in your HTML script)
 let ws;
 const reconnectDelay = 3000; // Delay in milliseconds before attempting reconnection
+const requestTimeout = 10000; // Delay in milliseconds before request times out and another is attempted
 
 // A simple counter to generate unique request IDs.
 function makeCounter() {
@@ -21,16 +22,13 @@ function connect() {
   };
 
   ws.onmessage = function(event) {
-    console.log("Got message on client", event);
+    console.log("Got message on client");
     try {
         const message = JSON.parse(event.data);
         // If the message has an id and matches a pending request, resolve its Promise.
         if (message.id && pendingRequests[message.id]) {
-          console.log("Message matched existing promise:", message)
           pendingRequests[message.id].resolve(message);
           delete pendingRequests[message.id];
-        } else {
-          console.log("Received message:", message);
         }
       } catch (err) {
         console.error("Error parsing message:", err);
@@ -45,6 +43,29 @@ function connect() {
     console.log(`WebSocket connection closed. Reconnecting in ${reconnectDelay / 1000} seconds...`);
     setTimeout(connect, reconnectDelay);
   };
+
+  ws.sendWithRetry = function (message) {
+    if (ws.readyState !== WebSocket.OPEN) {
+      return new Promise(resolve => setTimeout(() => resolve(ws.sendWithRetry(message)), reconnectDelay));
+    }
+    let { promise, resolve, reject } = Promise.withResolvers();
+    const requestId = generateRequestId();
+    message.id = requestId;
+    // Save the resolver so we can call it when the response comes back.
+    pendingRequests[requestId] = { resolve, reject };
+    setTimeout(() => {
+        if (pendingRequests[message.id]) {
+            pendingRequests[message.id].reject(`Response not received from server within ${requestTimeout} seconds, retrying`);
+            delete pendingRequests[message.id];
+            ws.sendWithRetry(message).then((result) => {
+              resolve(result);
+            });
+        }
+    }, requestTimeout);
+    console.log("Sending request", message.type);
+    ws.send(JSON.stringify(message));
+    return promise;
+  }
 }
 
 // Initiate the first connection
