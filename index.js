@@ -85,10 +85,9 @@ wss.on('connection', (ws) => {
   console.log('Client connected');
 //   /Users/josiahmcmenamy/transferred_files/meng_project/etcd/tests/integration/clientv3/lease/20250331_214656/TestLeasingGetChecksForExpiration_0/combined_logs.log
   ws.on('message', async (event) => {
-    console.log("Got message")
+    console.log("Got message");
+    const message = JSON.parse(event);
     try {
-        const message = JSON.parse(event);
-        console.log("Message is ", message)
         switch (message.type) {
             case "filePathRequest":
               return await handleFilePathRequest(message);
@@ -96,7 +95,11 @@ wss.on('connection', (ws) => {
               return await handleSlideWindowRequest(message);
         }
       } catch (err) {
-        console.error("Error parsing message:", err);
+        console.error("Error while processing message: ", err);
+        ws.send(JSON.stringify({
+          id: message.id,
+          error: err.toString()
+        }));
       }
   });
 
@@ -234,6 +237,8 @@ async function slideWindow(startOffset, endOffset) {
   // Open the file for reading.
   // const filehandle = await fs.open(filename, 'r');
   // const stats = await filehandle.stat();
+  startOffset = Math.floor(startOffset);
+  endOffset = Math.floor(endOffset);
   const fileSize = stats.size;
 
   // --- Adjust the start offset backwards to a newline ---

@@ -160,7 +160,11 @@ function ModelGraph(logEvents) {
                     if (clock[otherHost] == undefined || clock[otherHost] < time) {
                         clock[otherHost] = time;
 
+                        // this can now happen if range we see don't happen to have
+                        // log from this host. for now just ignore and continue
+                        // could also add this host, but it would just be a blank host
                         if (hostSet[otherHost] == undefined) {
+                            continue;
                             throw getBadHostException(currNode, otherHost);
                         }
 

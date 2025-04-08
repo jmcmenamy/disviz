@@ -27,7 +27,11 @@ function connect() {
         const message = JSON.parse(event.data);
         // If the message has an id and matches a pending request, resolve its Promise.
         if (message.id && pendingRequests[message.id]) {
-          pendingRequests[message.id].resolve(message);
+          if (message.error !== undefined) {
+            pendingRequests[message.id].reject(message.error);
+          } else {
+            pendingRequests[message.id].resolve(message);
+          }
           delete pendingRequests[message.id];
         }
       } catch (err) {

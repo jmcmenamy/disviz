@@ -956,7 +956,7 @@ svg {
   margin-bottom: 1em;
 }
 #sidebar .info {
-  height: 12em;
+  height: 30em;
   overflow-x: scroll;
   overflow-y: scroll;
   white-space: pre-wrap;
@@ -1066,6 +1066,7 @@ svg#defs {
 
 /* Error box */
 #errorbox {
+  overflow: auto;
   display: none;
   width: 50%;
   box-sizing: border-box;
@@ -1099,6 +1100,24 @@ svg#defs {
   left: 0;
   z-index: 98;
   background: rgba(255, 255, 255, 0.8);
+}
+
+
+
+.flex-container {
+  font-size: 10pt;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.flex-container label {
+  flex: 0 0 50%;
+  margin: 0.5em 0 !important;
+}
+
+#sidebar button, #sidebar label, #sidebar input {
+  margin: 0.5em 0 !important;
 }
 
 /*# sourceMappingURL=style.css.map */

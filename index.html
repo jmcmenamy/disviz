@@ -472,6 +472,19 @@
         <div id="sidebar">
             <button class="pairwiseButton">Pairwise</button>
             <button class="diffButton">Show Differences</button>
+            <div class="flex-container">
+                <label for="startPercent">Start Percent:</label>
+                <input type="text" id="startPercent" name="startPercent">
+              </div>
+            <div class="flex-container">
+                <label for="endPercent">End Percent:</label>
+                <input type="text" id="endPercent" name="endPercent">
+            </div>
+            <button id="logButton">Shift window</button>
+            <div class="flex-container">
+                <button id="startButton">Jump to Start</buttom>
+                <button id="endButton">Jump to End</button>
+            </div>
             <div class="info">
                 <div class="event"></div>
                 <table class="fields"></table>
@@ -490,8 +503,8 @@
 
     <div id="errorbox" class="error"></div>
     <div id="errorcover" class="error"></div>
-    <div id="top-sentinel" style="height: 1px; margin-bottom: 100vh; position: absolute;" data-node-type="top"></div>
-    <div id="bottom-sentinel" style="height: 1px; margin-top: 100vh; position: absolute;" data-node-type="bottom"></div>
+    <div id="top-sentinel" style="height: 1px; top: -1px; position: absolute;" data-node-type="top"></div>
+    <div id="bottom-sentinel" style="height: 1px; bottom: -1px; position: absolute;" data-node-type="bottom"></div>
 
     <svg id="defs">
         <defs>

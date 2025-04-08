@@ -127,13 +127,43 @@ function Shiviz() {
     //    this.value = "";
     // });
 
+    $("#logButton").on("click", function() {
+        if (context.currentFileName === undefined) {
+            return;
+        }
+        let start = parseInt($("#startPercent").val(), 10);
+        let end = parseInt($("#endPercent").val(), 10);
+        console.log("Start Percent: " + start);
+        console.log("End Percent: " + end);
+        if (start < 0 || end > 100 || start >= end) {
+            const exception = new Exception(`Invalid range given: start: ${$("#startPercent").val()}, end: ${$("#endPercent").val()}`, true);
+            context.handleException(exception)
+        }
+
+        context.slideWindow(context.currentFileSize*(start/100), context.currentFileSize*(end/100));
+    });
+
+    $("#startButton").on("click", function() {
+        if (context.currentFileName === undefined) {
+            return;
+        }
+        context.slideWindow(0, 400*context.bytesPerLine);
+    });
+
+    $("#endButton").on("click", function() {
+        if (context.currentFileName === undefined) {
+            return;
+        }
+        context.slideWindow(context.currentFileSize - 400*context.bytesPerLine, context.currentFileSize);
+    });
+
+
     function handleFileInput(response) {
           // Get the text string containing the file's data
           //   var text = reader.result;
           // Split the text string by the new line character 
           // to get the first 2 lines as substrings in an array
-          context.startingOffset = response.startOffset;
-          context.endingOffset = response.endOffset;
+          context.updateOffsets(response.startOffset, response.endOffset);
           const text = response.logs;
           var lines = text.split("\n",2);
                    
@@ -190,7 +220,17 @@ function Shiviz() {
           numBytes: context.endingOffset,
         };
         const promise = ws.sendWithRetry(message);
-        const response = await promise;
+        let failed = false;
+        const response = await promise.catch((reason) => {
+            console.log("reason is ", reason, typeof reason);
+            const exception = new Exception(reason, true);
+            context.handleException(exception);
+            failed = true;
+        });
+        if (failed) {
+            this.slideWindowRequestPending = false;
+            return;
+        }
         // TODO normalize filePath vs filename
         context.currentFileSize = response.fileSize;
         context.currentFileName = response.filePath;
@@ -526,9 +566,17 @@ Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
         filePath: this.currentFileName,
       };
     const promise = ws.sendWithRetry(message);
-    const response = await promise;
-    this.startingOffset = response.startOffset;
-    this.endingOffset = response.endOffset;
+    let failed = false;
+    const response = await promise.catch((reason) => {
+        const exception = new Exception(reason, true);
+        this.handleException(exception);
+        failed = true;
+    });
+    if (failed) {
+        this.slideWindowRequestPending = false;
+        return;
+    }
+    this.updateOffsets(response.startOffset, response.endOffset);
     const text = response.logs;
 
     var startOfLog;
@@ -547,6 +595,23 @@ Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
     this.slideWindowRequestPending = false;
 }
 
+Shiviz.prototype.updateOffsets = function(newStartOffset, newEndOffset) {
+    this.startingOffset = newStartOffset;
+    this.endingOffset = newEndOffset;
+    $("#startPercent").val(Math.floor((this.startingOffset/this.currentFileSize)*100));
+    $("#endPercent").val(Math.floor((this.endingOffset/this.currentFileSize)*100));
+}
+
 $(document).ready(function() {
     Shiviz.instance = new Shiviz();
 });
+
+/**
+ * TODO
+ * give percent indicator of part of file viewing DONE
+ * error if give bad filename, or other error on server ever DONE
+ * give button to go to end or beginning/any other offset DONE
+ * connect search bar to server
+ * debug raft bugs
+ * start thesis
+ */
