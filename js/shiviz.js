@@ -147,14 +147,14 @@ function Shiviz() {
         if (context.currentFileName === undefined) {
             return;
         }
-        context.slideWindow(0, 400*context.bytesPerLine);
+        context.slideWindow(0, Math.min(400*context.bytesPerLine, context.currentFileSize));
     });
 
     $("#endButton").on("click", function() {
         if (context.currentFileName === undefined) {
             return;
         }
-        context.slideWindow(context.currentFileSize - 400*context.bytesPerLine, context.currentFileSize);
+        context.slideWindow(Math.max(0, context.currentFileSize - 400*context.bytesPerLine), context.currentFileSize);
     });
 
 
@@ -611,6 +611,10 @@ $(document).ready(function() {
  * give percent indicator of part of file viewing DONE
  * error if give bad filename, or other error on server ever DONE
  * give button to go to end or beginning/any other offset DONE
+ * fix bug with showing the entire file when requesting a new file
+ * fix bug with scrolling
+ * add ability to disable collapsing nodes, maybe enable by default
+ * text search clearly doesn't work
  * connect search bar to server
  * debug raft bugs
  * start thesis

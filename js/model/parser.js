@@ -228,6 +228,12 @@ function ExecutionParser(rawString, label, regexp) {
 
 
             Object.entries(logObject).forEach(([key, value]) => {
+                if (typeof key !== 'string') {
+                    key = key.toString()
+                }
+                if (typeof value !== 'string') {
+                    value = value.toString()
+                }
                 if (!['processId', 'message', 'VCString'].includes(key)) {
                     fields[key] = value
                 }
