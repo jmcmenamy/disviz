@@ -217,6 +217,7 @@ function ExecutionParser(rawString, label, regexp) {
         // Split log data into individual lines
         // console.log("got here, raw string is", rawString)
         const logLines = rawString.trim().split("\n");
+        console.log(`Number of logLines are ${logLines.length}`)
 
         for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
             const line = logLines[lineNum];
