@@ -614,7 +614,6 @@ $(document).ready(function() {
  * fix bug with showing the entire file when requesting a new file
  * fix bug with scrolling
  * add ability to disable collapsing nodes, maybe enable by default
- * text search clearly doesn't work
  * connect search bar to server
  * debug raft bugs
  * start thesis

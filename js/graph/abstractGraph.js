@@ -266,8 +266,8 @@ AbstractGraph.prototype.getNodesTopologicallySorted = function() {
         }
     }
 
-    while (ready.length > 0) {
-        var curr = ready.pop();
+    for (let headIndex = 0; headIndex < ready.length; headIndex++) {
+        var curr = read[headIndex];
         toposort.push(curr);
 
         var others = curr.getChildren();
