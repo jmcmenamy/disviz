@@ -234,6 +234,7 @@ Shiviz.prototype.resetView = function() {
  * retrieved and used to construct the visualization accordingly.
  */
 Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortType, descending) {
+    const startTime = performance.now();
     try {
         d3.selectAll("#vizContainer svg").remove();
 
@@ -333,6 +334,9 @@ Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortTy
     catch (err) {
         this.handleException(err);
     }
+    const endTime = performance.now();
+    const elapsed = endTime - startTime;
+    console.log(`Visualization took ${elapsed} milliseconds`);
 };
 
 /**
