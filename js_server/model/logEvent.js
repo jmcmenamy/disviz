@@ -16,7 +16,7 @@
  *            field values extracted using regex.
  * @param {String} logLine the raw line from the log file
  */
-function LogEvent(text, vectorTimestamp, lineNum, fields, logLine) {
+function LogEvent(text, vectorTimestamp, lineNum, fields, logLine, offset) {
     /** @private */
     this.id = LogEvent.id++;
 
@@ -34,6 +34,9 @@ function LogEvent(text, vectorTimestamp, lineNum, fields, logLine) {
 
     /** @private */
     this.logLine = logLine;
+
+    /** @private */
+    this.offset = offset;
 
     /** @private */
     this.fields = Util.objectShallowCopy(fields) || {};
@@ -103,10 +106,21 @@ LogEvent.prototype.getLogLine = function() {
 };
 
 /**
+ * Returns the offset in the file associated with the start of this LogEvent
+ * 
+ * @returns {Number} the offset
+ */
+LogEvent.prototype.getOffset = function() {
+    return this.offset;
+};
+
+/**
  * Returns the custom captured fields for the log event.
  * 
  * @returns {Object<String, String>} The fields
  */
 LogEvent.prototype.getFields = function() {
-    return $.extend({}, this.fields);
+    return { ...this.fields };
+    // Object.assign({}, this.fields);
+    // return $.extend({}, this.fields);
 };

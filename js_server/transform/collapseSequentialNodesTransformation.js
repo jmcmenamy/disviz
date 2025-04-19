@@ -28,7 +28,8 @@
  */
 function CollapseSequentialNodesTransformation(threshold) {
     /** @private */
-    this.threshold = 2;
+    // disable collapsing by default
+    this.threshold = Number.POSITIVE_INFINITY;
     this.setThreshold(threshold);
 
     /** @private */

@@ -53,6 +53,11 @@ function connect() {
       return new Promise(resolve => setTimeout(() => resolve(ws.sendWithRetry(message)), reconnectDelay));
     }
     let { promise, resolve, reject } = Promise.withResolvers();
+    // display error to user if any occurs
+    promise.catch((reason) => {
+      const exception = new Exception(reason, true);
+      Shiviz.getInstance().handleException(exception);
+    });
     const requestId = generateRequestId();
     message.id = requestId;
     // Save the resolver so we can call it when the response comes back.
@@ -61,9 +66,7 @@ function connect() {
         if (pendingRequests[message.id]) {
             pendingRequests[message.id].reject(`Response not received from server within ${requestTimeout} seconds, retrying`);
             delete pendingRequests[message.id];
-            ws.sendWithRetry(message).then((result) => {
-              resolve(result);
-            });
+            resolve(ws.sendWithRetry(message));
         }
     }, requestTimeout);
     console.log("Sending request", message.type);

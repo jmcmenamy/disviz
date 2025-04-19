@@ -9,12 +9,14 @@
  *            highlight
  * @param {Boolean} ignoreEdges If true, edges will not be visually highlighted
  */
-function HighlightMotifTransformation(finder, ignoreEdges) {
+function HighlightMotifTransformation(finder, ignoreEdges, lineToHighlight) {
 
     /** @private */
     this.finder = finder;
 
     this.motifGroup = null;
+
+    this.lineToHighlight = lineToHighlight;
 
     this.setIgnoreEdges(ignoreEdges);
 }
@@ -71,11 +73,24 @@ HighlightMotifTransformation.prototype.transform = function(model) {
     });
 
     var nodes = this.motifGroup.getNodes();
+    // console.log("Transforming, line to highlight is ", this.lineToHighlight)
     for (var i = 0; i < nodes.length; i++) {
         var node = nodes[i];
         var visualNode = model.getVisualNodeByNode(node);
         visualNode.setRadius(5 * 1.2);
         visualNode.setOpacity(1);
+        const events = node.getLogEvents();
+        for (let i = 0; i < events.length; i++) {
+            const event = events[i];
+            if (event.getLogLine() === this.lineToHighlight) {
+                console.log("Making node", visualNode.getId(), "bigger");
+                var id = "#node" + visualNode.getId();
+                // make this node appear bigger
+                queueMicrotask(() => $(id)[0].dispatchEvent(new MouseEvent("mouseover")));
+                // $(id)[0].dispatchEvent(new MouseEvent("mouseover"));
+                break;
+            }
+        }
     }
 
     var edges = this.motifGroup.getEdges();

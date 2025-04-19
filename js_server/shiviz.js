@@ -99,7 +99,6 @@ function Shiviz() {
     $("#versionContainer").html(versionText);
 
     $("#visualize").on("click", function() {
-        console.log('line 102?', $('#parser').val());
         context.go(2, true, true);
     });
 

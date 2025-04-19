@@ -216,10 +216,16 @@ function ExecutionParser(rawString, label, regexp) {
     function parseZapLogs(timestamps, logEvents) {
         // Split log data into individual lines
         // console.log("got here, raw string is", rawString)
+        const encoder = new TextEncoder();
+        let currentOffset = 0;
         const logLines = rawString.trim().split("\n");
 
         for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
             const line = logLines[lineNum];
+            if (line === "") {
+                currentOffset += encoder.encode('\n').length;
+                continue;
+            }
             const logObject = JSON.parse(line); // Parse JSON line
 
             const fields = {};
@@ -244,7 +250,8 @@ function ExecutionParser(rawString, label, regexp) {
 
             var timestamp = parseJsonTimestamp(clock, host, line);
             timestamps.push(timestamp);
-            logEvents.push(new LogEvent(event, timestamp, lineNum, fields, line));
+            logEvents.push(new LogEvent(event, timestamp, lineNum, fields, line, currentOffset));
+            currentOffset += encoder.encode(line + '\n').length;
         }
     }
 

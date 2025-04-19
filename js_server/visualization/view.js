@@ -168,6 +168,7 @@ View.prototype.draw = function(viewPosition) {
 
     // Update the VisualGraph
     this.visualGraph.update();
+    return;
 
     // Define locally so that we can use in lambdas below
     var view = this;

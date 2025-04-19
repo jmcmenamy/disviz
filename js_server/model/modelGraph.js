@@ -194,7 +194,7 @@ function ModelGraph(logEvents) {
 
         var sortedNodes = null;
         try {
-            sortedNodes = mg.getNodesTopologicallySorted();
+            sortedNodes = Array.from(mg.getNodesTopologicallySorted());
         }
         catch (e) {
             throw new Exception("An error occured. The log is intransitive. That is, there are three events x, y, and z such that x occurs before y, y occurs before z, and z before x.", true);

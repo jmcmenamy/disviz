@@ -39,7 +39,7 @@ function Transformer() {
     this.viewToDiffTransform = {};
 
     /** @private */
-    this.collapseSequentialNodesTransformation = new CollapseSequentialNodesTransformation(2);
+    this.collapseSequentialNodesTransformation = new CollapseSequentialNodesTransformation(Number.POSITIVE_INFINITY);
 
     /** @private */
     this.highlightHostTransformation = new HighlightHostTransformation();
@@ -240,8 +240,8 @@ Transformer.prototype.toggleCollapseNode = function(node) {
  * @param {Boolean} ignoreEdges edges will not be highlighted if true
  * @see {@link HighlightMotifTransformation}
  */
-Transformer.prototype.highlightMotif = function(motifFinder, ignoreEdges) {
-    this.highlightMotifTransformation = new HighlightMotifTransformation(motifFinder, ignoreEdges);
+Transformer.prototype.highlightMotif = function(motifFinder, ignoreEdges, lineToHighlight) {
+    this.highlightMotifTransformation = new HighlightMotifTransformation(motifFinder, ignoreEdges, lineToHighlight);
 };
 
 /**
@@ -344,6 +344,8 @@ Transformer.prototype.transform = function(visualModel) {
         trans.transform(visualModel);
     }
 
+    // console.log("IN TRANSFORMER.JS");
+    // console.trace();
     if (this.highlightMotifTransformation != null) {
         this.highlightMotifTransformation.transform(visualModel);
         this.highlighted = this.highlightMotifTransformation.getHighlighted();

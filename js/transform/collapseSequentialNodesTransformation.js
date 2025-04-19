@@ -28,7 +28,8 @@
  */
 function CollapseSequentialNodesTransformation(threshold) {
     /** @private */
-    this.threshold = 2;
+    // disable thresholding by default
+    this.threshold = Number.POSITIVE_INFINITY;
     this.setThreshold(threshold);
 
     /** @private */
@@ -176,6 +177,7 @@ CollapseSequentialNodesTransformation.prototype.isExempt = function(node) {
  * @returns {Boolean} true if the node can be collapsed
  */
 CollapseSequentialNodesTransformation.isCollapseable = function(node, threshold) {
+    return false;
     if (threshold < 2) {
         throw new Exception("CollapseSequentialNodesTransformation.isCollapseable: Invalid threshold. Threshold must be greater than or equal to 2");
     }
@@ -250,6 +252,7 @@ CollapseSequentialNodesTransformation.prototype.transform = function(model) {
         while (curr != null) {
             if (curr.hasFamily() || curr.isTail() || this.isExempt(curr)) {
                 if (groupCount >= this.threshold) {
+                    console.log(groupCount, "COLLAPSING???", this.threshold, groupCount >= this.threshold)
                     collapse(curr, groupCount);
                 }
                 groupCount = -1;

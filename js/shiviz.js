@@ -27,7 +27,7 @@ function Shiviz() {
     // Arbitrarily request 400 lines assuming around 1605 bytes/line at the start
     this.endingOffset = 400*this.bytesPerLine;
     this.atEndOfFile = false;
-    this.slideWindowRequestPending = false;
+    this.serverRequestPending = false;
     this.currentFileName = undefined;
     this.currentFileSize = undefined;
 
@@ -108,7 +108,9 @@ function Shiviz() {
     $("#versionContainer").html(versionText);
 
     $("#visualize").on("click", async function() {
-        await handleFilePath();
+        if ($("#file").val() != "") {
+            await handleFilePath();
+        }
         console.log("handled filepath");
         context.go(2, true, true);
     });
@@ -196,10 +198,10 @@ function Shiviz() {
           $("#ordering").val(context.defaultOrdering);
           
           // Get the position of the new line character that occurs at the end of the second line
-          var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
+        //   var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1);
           // The log will start at the position above + 1;
           // fill in the log text area with the rest of the lines of the file
-          $("#input").val(text.substr(startOfLog + 1));
+          $("#input").val(text);
           
           context.resetView();
     }
@@ -219,18 +221,7 @@ function Shiviz() {
           descending: $("#ordering option:selected").val().trim() == "descending",
           numBytes: context.endingOffset,
         };
-        const promise = ws.sendWithRetry(message);
-        let failed = false;
-        const response = await promise.catch((reason) => {
-            console.log("reason is ", reason, typeof reason);
-            const exception = new Exception(reason, true);
-            context.handleException(exception);
-            failed = true;
-        });
-        if (failed) {
-            this.slideWindowRequestPending = false;
-            return;
-        }
+        const response = await ws.sendWithRetry(message);
         // TODO normalize filePath vs filename
         context.currentFileSize = response.fileSize;
         context.currentFileName = response.filePath;
@@ -353,7 +344,7 @@ Shiviz.prototype.resetView = function() {
  * This method creates the visualization. The user's input to UI elements are
  * retrieved and used to construct the visualization accordingly.
  */
-Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortType, descending) {
+Shiviz.prototype.visualize = async function(log, regexpString, delimiterString, sortType, descending, shouldClearSearchOnServer) {
     try {
         d3.selectAll("#vizContainer svg").remove();
 
@@ -445,7 +436,7 @@ Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortTy
         var global = new Global($("#vizContainer"), $("#sidebar"), $("#hostBar"), $("table.log"), views);
         var searchbar = SearchBar.getInstance();
         searchbar.setGlobal(global);
-        SearchBar.getInstance().clear();
+        await SearchBar.getInstance().clear(shouldClearSearchOnServer);
 
         global.setHostPermutation(hostPermutation);
         global.drawAll();
@@ -464,7 +455,7 @@ Shiviz.prototype.visualize = function(log, regexpString, delimiterString, sortTy
  * @param {Boolean} store Whether or not to store the history state
  * @param {Boolean} force Whether or not to force redrawing of graph
  */
-Shiviz.prototype.go = function(index, store, force) {
+Shiviz.prototype.go = async function(index, store, force) {
     switch (index) {
         case 0:
             $("section").hide();
@@ -482,7 +473,7 @@ Shiviz.prototype.go = function(index, store, force) {
             $(".visualization").show();
             try {
                 if (!$("#vizContainer svg").length || force)
-                    this.visualize($("#input").val(), $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val().trim(), $("#ordering option:selected").val().trim() == "descending");
+                    await this.visualize($("#input").val(), $("#parser").val(),  $("#delimiter").val(), $("input[name=host_sort]:checked").val().trim(), $("#ordering option:selected").val().trim() == "descending");
             } catch(e) {
                 $(".visualization").hide();
                 throw e;
@@ -551,11 +542,11 @@ Shiviz.prototype.handleException = function(err) {
 };
 
 Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
-    if (this.slideWindowRequestPending) {
+    if (this.serverRequestPending) {
         // console.log("Request already pending, returning");
         return;
     }
-    this.slideWindowRequestPending = true;
+    this.serverRequestPending = true;
 
     // its ok if offsets are out of bounds, server handles
     const message = {
@@ -567,35 +558,38 @@ Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
       };
     const promise = ws.sendWithRetry(message);
     let failed = false;
-    const response = await promise.catch((reason) => {
-        const exception = new Exception(reason, true);
-        this.handleException(exception);
+    const response = await promise.catch(() => {
         failed = true;
     });
     if (failed) {
-        this.slideWindowRequestPending = false;
+        this.serverRequestPending = false;
         return;
     }
-    this.updateOffsets(response.startOffset, response.endOffset);
-    const text = response.logs;
+    await this.handleLogsFromServer(response);
+}
 
-    var startOfLog;
-    if (this.startingOffset === 0) {
-    startOfLog = 0;
-    } else {
-    // Get the position of the new line character that occurs at the end of the second line
-    var startOfLog = text.indexOf("\n", (text.indexOf("\n")) + 1) + 1;
-    }
+Shiviz.prototype.handleLogsFromServer = async function(response, shouldClearSearchOnServer) {
+    this.updateOffsets(response.startOffset, response.endOffset);
+
     // The log will start at the position above + 1;
     // fill in the log text area with the rest of the lines of the file
-    $("#input").val(text.substr(startOfLog));
+    $("#input").val(response.logs);
 
     this.resetView();
-    this.go(2, true, true);
-    this.slideWindowRequestPending = false;
+    $(".visualization").show();
+    await this.visualize(
+        $("#input").val(),
+        $("#parser").val(),
+        $("#delimiter").val(),
+        $("input[name=host_sort]:checked").val().trim(),
+        $("#ordering option:selected").val().trim() == "descending",
+        shouldClearSearchOnServer
+    );
+    this.serverRequestPending = false;
 }
 
 Shiviz.prototype.updateOffsets = function(newStartOffset, newEndOffset) {
+    console.log("New offsets are ", newStartOffset, newEndOffset);
     this.startingOffset = newStartOffset;
     this.endingOffset = newEndOffset;
     $("#startPercent").val(Math.floor((this.startingOffset/this.currentFileSize)*100));

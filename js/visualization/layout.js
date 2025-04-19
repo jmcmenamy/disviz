@@ -67,6 +67,9 @@ SpaceTimeLayout.prototype.constructor = SpaceTimeLayout;
  */
 SpaceTimeLayout.prototype.start = function(visualGraph, hostPermutation) {
 
+    // console.log("Starting spacetimelayout");
+    // console.trace();
+
     this.height = 0;
 
     var nodeToNumParents = {};

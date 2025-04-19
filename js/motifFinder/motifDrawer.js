@@ -80,7 +80,7 @@ MotifDrawer.prototype.drawResults = function() {
     $(".motifResults").append(this.table);
 
     // Event handler when links in the motifs tab are clicked
-    $(".motifResults a").on("click", function(e) {
+    $(".motifResults a").on("click", async function(e) {
         var motifIndex = $(this).attr("href");
         $("#motifIcon").remove();
         $(".motifResults a").removeClass("indent");
@@ -98,7 +98,7 @@ MotifDrawer.prototype.drawResults = function() {
 
         // Clear any current searches and re-set to motif search
         if (context.searchbar.getMode() != SearchBar.MODE_MOTIF) {
-            context.searchbar.clear();
+            await context.searchbar.clear();
             context.searchbar.setValue("#motif");
         }
         // Highlight the given motif in the clicked on execution

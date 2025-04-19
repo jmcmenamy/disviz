@@ -202,7 +202,11 @@ LEMInterpreter.prototype.visitRegexLiteral = function(ast, env) {
  */
 LEMInterpreter.prototype.visitImplicitSearch = function(ast, env) {
     for (var key in env) {
-        if (env[key].toLowerCase().indexOf(ast.getText().toLowerCase()) >= 0) {
+        // console.log("in lem interpreter", env, key, env[key], typeof env[key]);
+
+        // console.log('uh', env[key].toString().toLowerCase().indexOf('2'), 'uh', ast.getText().toLowerCase());
+        // console.log('hu', env[key].toString().toLowerCase().indexOf(ast.getText().toLowerCase()), typeof env[key].toString().toLowerCase().indexOf(ast.getText().toLowerCase()));
+        if (env[key].toString().toLowerCase().indexOf(ast.getText().toLowerCase()) >= 0) {
             return new LEMInterpreterValue(LEMInterpreterValue.BOOLEAN, true);
         }
     }

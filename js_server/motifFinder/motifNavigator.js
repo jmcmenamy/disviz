@@ -50,15 +50,22 @@ MotifNavigator.prototype.addMotif = function(visualGraph, motifGroup) {
     for (var m = 0; m < motifs.length; m++) {
         var motif = motifs[m];
         var top = Number.POSITIVE_INFINITY;
+        let offset = undefined;
+        let lineToHighlight = undefined;
 
         var nodes = motif.getNodes();
         for (var i = 0; i < nodes.length; i++) {
             var node = nodes[i];
+            if (offset === undefined) {
+                const event = node.getLogEvents()[0];
+                offset = event.getOffset();
+                lineToHighlight = event.getLogLine();
+            }
             var visualNode = visualGraph.getVisualNodeByNode(node);
             top = Math.min(top, visualNode.getY());
         }
 
-        var data = new MotifNavigatorData(top, motif, visualGraph);
+        var data = new MotifNavigatorData(top, motif, visualGraph, offset, lineToHighlight);
         this.motifDatas.push(data);
     }
 
@@ -114,7 +121,7 @@ MotifNavigator.prototype.next = function() {
         this.index = this.wrap ? 0 : this.getNumMotifs();
     }
 
-    this.handleCurrent();
+    return this.handleCurrent();
 };
 
 /**
@@ -134,7 +141,7 @@ MotifNavigator.prototype.prev = function() {
         this.index = this.wrap ? this.getNumMotifs() - 1 : -1;
     }
 
-    this.handleCurrent();
+   return this.handleCurrent();
 };
 
 /**
@@ -149,9 +156,11 @@ MotifNavigator.prototype.handleCurrent = function() {
 
     var motifData = this.motifDatas[this.index];
 
-    var position = motifData.getTop() - MotifNavigator.TOP_SPACING;
-    position = Math.max(0, position);
-    $(window).scrollTop(position);
+    return { offset: motifData.offset, index: this.index, lineToHighlight: motifData.lineToHighlight } ;
+
+    // var position = motifData.getTop() - MotifNavigator.TOP_SPACING;
+    // position = Math.max(0, position);
+    // $(window).scrollTop(position);
 };
 
 /**
@@ -167,7 +176,7 @@ MotifNavigator.prototype.handleCurrent = function() {
  * @param {Motif} Motif The motif itself
  * @param {VisualGraph} visualGraph The visual graph containing the motif
  */
-function MotifNavigatorData(top, motif, visualGraph) {
+function MotifNavigatorData(top, motif, visualGraph, offset, lineToHighlight) {
 
     /** @private */
     this.top = top;
@@ -177,6 +186,10 @@ function MotifNavigatorData(top, motif, visualGraph) {
 
     /** @private */
     this.visualGraph = visualGraph;
+
+    this.offset = offset;
+
+    this.lineToHighlight = lineToHighlight
 }
 
 /**

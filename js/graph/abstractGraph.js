@@ -248,6 +248,8 @@ AbstractGraph.prototype.getAllNodes = function() {
  *             topologically sorted order if there exists a cycle.
  */
 AbstractGraph.prototype.getNodesTopologicallySorted = function() {
+    // console.log("Topo sorting nodes");
+    // console.trace();
     toposort = [];
 
     var inDegree = {}; // mapping of node ID to current in degree
@@ -267,7 +269,7 @@ AbstractGraph.prototype.getNodesTopologicallySorted = function() {
     }
 
     for (let headIndex = 0; headIndex < ready.length; headIndex++) {
-        var curr = read[headIndex];
+        var curr = ready[headIndex];
         toposort.push(curr);
 
         var others = curr.getChildren();

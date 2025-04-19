@@ -113,6 +113,7 @@ Global.NODE_STROKE_WIDTH = 2;
  */
 Global.prototype.drawAll = function() {
     // server side, no drawing!
+    this.viewL.draw("L");
     return;
     var global = this;
     var numViews = this.views.length;

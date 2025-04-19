@@ -42,8 +42,8 @@ function VisualGraph(graph, layout, hostPermutation) {
         const shiviz = Shiviz.getInstance();
 
         // if request is pending from previous scroll event, do nothing
-        if (shiviz.slideWindowRequestPending) {
-            console.log("returning cause request active")
+        if (shiviz.serverRequestPending || SearchBar.getInstance().motifNavigator !== null) {
+            console.log("returning cause request active or search active");
             return;
         }
 

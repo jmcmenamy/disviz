@@ -47,6 +47,9 @@ function SearchBar() {
     /** @private */
     this.updateLocked = false;
 
+    /** @private */
+    this.numInstances = undefined;
+
     var context = this;
 
     // Called whenever a change is made to the GraphBuilder -- either through drawing a custom structure or through clearStructure()
@@ -62,7 +65,7 @@ function SearchBar() {
         }
     });
 
-    $("#searchbar #bar input").unbind("keydown.search").on("keydown.search", function(e) {
+    $("#searchbar #bar input").unbind("keydown.search").on("keydown.search", async function(e) {
         // Only act when panel is expanded
         if (!context.isPanelShown())
             return;
@@ -72,7 +75,7 @@ function SearchBar() {
         case 13:
             if (context.getValue().trim().length > 0) {
                 context.addToSearchHistory(context.getValue());
-                context.query();
+                await context.queryServer();
                 context.hidePanel();
             }
             break;
@@ -93,23 +96,23 @@ function SearchBar() {
         context.showSearchHistory();
     });
 
-    $("#searchButton").on("click", function(e) { 
+    $("#searchButton").on("click", async function(e) { 
 
         context.addToSearchHistory(context.getValue());
 
         if (e.ctrlKey && e.altKey) {
             var regexp = '(?<event>){"host":"(?<host>[^}]+)","clock":(?<clock>{[^}]*})}';
-            Shiviz.getInstance().visualize(context.getValue(), regexp, "", "order", false);
+            await Shiviz.getInstance().visualize(context.getValue(), regexp, "", "order", false);
         }
         else {
-            context.query();
+            await context.queryServer();
         }
         context.hidePanel();
     });
 
-    $("#searchbar #bar .clear").on("click", function() {
+    $("#searchbar #bar .clear").on("click", async function() {
         context.updateLocked = true;
-        context.clear();
+        await context.clear(true);
         context.hidePanel();
         context.update();
         context.updateLocked = false;
@@ -117,28 +120,30 @@ function SearchBar() {
         context.global.getController().bindScroll();
     });
 
-    $("#searchbar .predefined button").on("click", function() {
+    $("#searchbar .predefined button").on("click", async function() {
         context.clearStructure();
         context.setValue("#" + this.name);
         context.addToSearchHistory("#" + this.name)
         context.hidePanel();
-        context.query();
+        await context.queryServer();
     });
 
     $("#nextButton").on("click", function() {
         if (context.motifNavigator == null) {
             return;
         }
-        context.motifNavigator.next();
-        context.hidePanel();
+        context.getNextResultFromServer(1);
+        // context.motifNavigator.next();
+        // context.hidePanel();
     });
 
     $("#prevButton").on("click", function() {
         if (context.motifNavigator == null) {
             return;
         }
-        context.motifNavigator.prev();
-        context.hidePanel();
+        context.getNextResultFromServer(-1);
+        // context.motifNavigator.prev();
+        // context.hidePanel();
     });
 
     // Event handler for switching between search options
@@ -403,10 +408,10 @@ SearchBar.prototype.showPanel = function() {
         })
 
         // Event handler for items added above
-        $("#searchbar .historyItem").on("click", function(e) {
+        $("#searchbar .historyItem").on("click", async function(e) {
             var clickedText = jQuery(this).text();
             context.setValue(clickedText)
-            context.query();
+            await context.queryServer();
             context.hidePanel();
         });
     } 
@@ -461,17 +466,73 @@ SearchBar.prototype.clearResults = function() {
  * @see {@link SearchBar#clearText}
  * @see {@link SearchBar#clearResults}
  */
-SearchBar.prototype.clear = function() {
+SearchBar.prototype.clear = async function(shouldClearServer) {
+    console.log("CALLING CLEAR FOR SOME REASON");
+    if (shouldClearServer || shouldClearServer === undefined) {
+        const message = {
+            type: "searchRequest",
+            clear: true,
+        };
+        const promise = ws.sendWithRetry(message);
+        const response = await promise;
+        if (!response.success) {
+            Shiviz.getInstance().handleException(new Exception("clear should success on the server", true));
+        }
+    }
+    this.numInstances = undefined;
     this.clearStructure();
     this.clearText();
     this.clearResults();
 };
 
+SearchBar.prototype.queryServer = async function() {
+    this.updateMode();
+
+    // ask the server to perform this query,
+    const queryString = this.getValue();
+    const message = {
+        type: "searchRequest",
+        queryString: queryString,
+    };
+    const promise = ws.sendWithRetry(message);
+    const response = await promise;
+    await this.handleNextResuleFromServer(queryString, response);
+}
+
+SearchBar.prototype.getNextResultFromServer = async function(delta) {
+    // ask the server to perform this query,
+    const queryString = this.getValue();
+    const message = {
+        type: "nextResultRequest",
+        delta: delta,
+    };
+    const promise = ws.sendWithRetry(message);
+    const response = await promise;
+    await this.handleNextResuleFromServer(queryString, response);
+}
+
+SearchBar.prototype.handleNextResuleFromServer = async function(queryString, response) {
+    console.log("got query server response", response.startOffset, response.endOffset, response.numInstances);
+    if (response.searchSuccessful) {
+        await Shiviz.getInstance().handleLogsFromServer(response, false);
+    }
+    this.setValue(queryString);
+    // console.log("line to highlight from server is ", response.lineToHighlight)
+    this.query(response.lineToHighlight);
+    this.numInstances = response.numInstances;
+    this.motifNavigator.numInstances = response.numInstances;
+    // this.motifNavigator.next();
+    this.hidePanel();
+    $("#numFound").text(`${response.index+1}/${this.numInstances}`);
+    // var id = "#node" + motifData.id;
+    // $(id)[0].dispatchEvent(new MouseEvent("mouseover"));
+}
+
 /**
  * Performs a query based on what is currently in the text field.
  */
-SearchBar.prototype.query = function() {
-    this.updateMode();
+SearchBar.prototype.query = async function(lineToHighlight) {
+
     var searchbar = this;
 
     try {
@@ -482,7 +543,7 @@ SearchBar.prototype.query = function() {
 
         case SearchBar.MODE_TEXT:
             var finder = new TextQueryMotifFinder(this.getValue());
-            this.global.getController().highlightMotif(finder);
+            this.global.getController().highlightMotif(finder, lineToHighlight);
             break;
 
         case SearchBar.MODE_CUSTOM:
@@ -490,7 +551,7 @@ SearchBar.prototype.query = function() {
                 var json = this.getValue().trim().match(/^#(?:structure=)?(\[.*\])/i)[1];
                 var builderGraph = this.getBuilderGraphFromJSON(json);
                 var finder = new CustomMotifFinder(builderGraph);
-                this.global.getController().highlightMotif(finder);
+                this.global.getController().highlightMotif(finder, lineToHighlight);
             }
             catch (exception) {
                 $("#searchbar #bar input").css("color", "red");
@@ -504,7 +565,7 @@ SearchBar.prototype.query = function() {
 
             if (type == "request-response") {
                 var finder = new RequestResponseFinder(999, 4);
-                this.global.getController().highlightMotif(finder);
+                this.global.getController().highlightMotif(finder, lineToHighlight);
                 break;
             }
             else if (type == "broadcast" || type == "gather") {
@@ -523,7 +584,7 @@ SearchBar.prototype.query = function() {
                     }).length;
                     var finder = new BroadcastGatherFinder(hosts - 1, 4, broadcast);
 
-                    view.getTransformer().highlightMotif(finder, false);
+                    view.getTransformer().highlightMotif(finder, false, lineToHighlight);
                 });
 
                 this.global.drawAll();
@@ -601,7 +662,7 @@ SearchBar.prototype.query = function() {
                 builderGraphs.push(builderGraph);
 
                 var finder = new CustomMotifFinder(builderGraph);
-                var hmt = new HighlightMotifTransformation(finder, false);
+                var hmt = new HighlightMotifTransformation(finder, false, lineToHighlight);
 
                 searchbar.global.getViews().forEach(function(view) {
                     var label = view.getLabel();
@@ -659,18 +720,19 @@ SearchBar.prototype.countMotifs = function() {
     if ($("#searchbar").hasClass("results")) {
         var views = this.global.getActiveViews();
         this.motifNavigator = new MotifNavigator();
+        this.motifNavigator.numInstances = this.numInstances;
         this.motifNavigator.addMotif(views[0].getVisualModel(), views[0].getTransformer().getHighlightedMotif());
         if (this.global.getPairwiseView()) {
             this.motifNavigator.addMotif(views[1].getVisualModel(), views[1].getTransformer().getHighlightedMotif());
         }
         this.motifNavigator.start();
     
-        var numMotifs = this.motifNavigator.getNumMotifs();
-        var numInstances = numMotifs + " instance";
-        if (numMotifs == 0 || numMotifs > 1) {
-            numInstances = numInstances.concat("s");
-        }
-        $("#numFound").text(numInstances + " in view");
+        // var numMotifs = this.motifNavigator.getNumMotifs();
+        // var numInstances = numMotifs + " instance";
+        // if (numMotifs == 0 || numMotifs > 1) {
+        //     numInstances = numInstances.concat("s");
+        // }
+        // $("#numFound").text(numInstances + " in view");
     }
 };
 

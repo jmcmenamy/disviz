@@ -160,6 +160,7 @@ function ExecutionParser(rawString, label, regexp) {
         });
 
         var timestamp = parseStringTimestamp(clock, host, ln);
+        console.log("timestamp", timestamp, clock, host, ln);
         this.timestamps.push(timestamp);
         this.logEvents.push(new LogEvent(event, timestamp, ln, fields));
     }
@@ -195,7 +196,7 @@ function ExecutionParser(rawString, label, regexp) {
             }
         }
     
-        parseJsonTimestamp(clock, hostString)
+        return parseJsonTimestamp(clock, hostString)
     }
 
     function parseJsonTimestamp(clock, hostString, line) {
@@ -218,6 +219,9 @@ function ExecutionParser(rawString, label, regexp) {
 
         for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
             const line = logLines[lineNum];
+            if (line === "") {
+                continue;
+            }
             const logObject = JSON.parse(line); // Parse JSON line
 
             const fields = {};
@@ -241,7 +245,7 @@ function ExecutionParser(rawString, label, regexp) {
 
             var timestamp = parseJsonTimestamp(clock, host, line);
             timestamps.push(timestamp);
-            logEvents.push(new LogEvent(event, timestamp, lineNum, fields));
+            logEvents.push(new LogEvent(event, timestamp, lineNum, fields, line));
         }
     }
 

@@ -247,28 +247,44 @@ AbstractGraph.prototype.getAllNodes = function() {
  * @throws An exception if the graph contains a cycle. There cannot exist a
  *             topologically sorted order if there exists a cycle.
  */
-AbstractGraph.prototype.getNodesTopologicallySorted = function() {
-    toposort = [];
+AbstractGraph.prototype.getNodesTopologicallySorted = function*() {
 
+    // console.log("Topo sorting nodes");
+    // console.trace();
     var inDegree = {}; // mapping of node ID to current in degree
     var ready = [];
     var nodes = this.getNodes();
+    // Map<Number, Array<AbstractNode>>
+    const orderMap = new Map();
+    const updateOrderMap = (node) => {
+        let nodesAtHeight = orderMap.get(node.getAbstractY());
+        if (nodesAtHeight === undefined) {
+            nodesAtHeight = [];
+            orderMap.set(node.getAbstractY(), nodesAtHeight);
+        }
+        nodesAtHeight.push(node);
+    }
+
     for (var i = 0; i < nodes.length; i++) {
         var node = nodes[i];
 
+        node.setAbstractY(0);
         inDegree[node.getId()] = node.getParents().length;
         if (!node.getPrev().isHead()) {
             inDegree[node.getId()]++;
         }
 
         if (inDegree[node.getId()] == 0) {
+            updateOrderMap(node);
             ready.push(node);
         }
     }
 
+    let currentHeight = 0;
+
     while (ready.length > 0) {
         var curr = ready.pop();
-        toposort.push(curr);
+        currentHeight = Math.max(currentHeight, curr.getAbstractY());
 
         var others = curr.getChildren();
         if (!curr.getNext().isTail()) {
@@ -279,10 +295,21 @@ AbstractGraph.prototype.getNodesTopologicallySorted = function() {
             var other = others[i];
             inDegree[other.getId()]--;
 
+            other.setAbstractY(Math.max(other.getAbstractY(), curr.getAbstractY() + 1));
+
             if (inDegree[other.getId()] == 0) {
+                updateOrderMap(other);
                 ready.push(other);
             }
         }
+    }
+
+    currentHeight = 0;
+    let nodesAtHeight = orderMap.get(currentHeight);
+
+    while (nodesAtHeight !== undefined) {
+        yield* nodesAtHeight
+        nodesAtHeight = orderMap.get(++currentHeight);
     }
 
     for (var key in inDegree) {
@@ -290,8 +317,6 @@ AbstractGraph.prototype.getNodesTopologicallySorted = function() {
             throw new Exception("AbstractGraph.prototype.getNodesTopologicallySorted: Cannot perform topological sort - graph is not acyclic");
         }
     }
-
-    return toposort;
 };
 
 /**

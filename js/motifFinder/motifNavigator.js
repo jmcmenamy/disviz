@@ -25,6 +25,8 @@ function MotifNavigator() {
     /** @private */
     this.hasStarted = false;
 
+    this.numInstances = undefined;
+
 };
 
 /**
@@ -51,14 +53,18 @@ MotifNavigator.prototype.addMotif = function(visualGraph, motifGroup) {
         var motif = motifs[m];
         var top = Number.POSITIVE_INFINITY;
 
+        let id = undefined;
         var nodes = motif.getNodes();
         for (var i = 0; i < nodes.length; i++) {
             var node = nodes[i];
+            if (id === undefined) {
+                id = node.getId();
+            }
             var visualNode = visualGraph.getVisualNodeByNode(node);
             top = Math.min(top, visualNode.getY());
         }
 
-        var data = new MotifNavigatorData(top, motif, visualGraph);
+        var data = new MotifNavigatorData(top, motif, visualGraph, id);
         this.motifDatas.push(data);
     }
 
@@ -167,10 +173,12 @@ MotifNavigator.prototype.handleCurrent = function() {
  * @param {Motif} Motif The motif itself
  * @param {VisualGraph} visualGraph The visual graph containing the motif
  */
-function MotifNavigatorData(top, motif, visualGraph) {
+function MotifNavigatorData(top, motif, visualGraph, id) {
 
     /** @private */
     this.top = top;
+
+    this.id = id;
 
     /** @private */
     this.motif = motif;

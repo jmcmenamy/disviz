@@ -138,6 +138,9 @@ function AbstractNode() {
     /** @private */
     this.graph = null;
 
+    /** @private */
+    this.abstractY = 0;
+
 }
 
 /**
@@ -691,4 +694,24 @@ AbstractNode.prototype.notifyGraph = function(event) {
     if (this.graph != null) {
         this.graph.notify(event);
     }
+};
+
+
+/**
+ * Gets the y coordinate of the center of the VisualNode.
+ * 
+ * @returns {Number} The y-coordinate
+ * 
+ */
+AbstractNode.prototype.getAbstractY = function() {
+    return this.abstractY;
+};
+
+/**
+ * Sets the y coordinate of the center of the VisualNode.
+ * 
+ * @param {Number} newY The new y-coordinate
+ */
+AbstractNode.prototype.setAbstractY = function(newY) {
+    this.abstractY = newY;
 };

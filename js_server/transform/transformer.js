@@ -344,6 +344,7 @@ Transformer.prototype.transform = function(visualModel) {
         trans.transform(visualModel);
     }
 
+    // console.log("IN TRANSFORMER.JS");
     if (this.highlightMotifTransformation != null) {
         this.highlightMotifTransformation.transform(visualModel);
         this.highlighted = this.highlightMotifTransformation.getHighlighted();

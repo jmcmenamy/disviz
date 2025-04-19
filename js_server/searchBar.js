@@ -47,6 +47,11 @@ function SearchBar() {
     /** @private */
     this.updateLocked = false;
 
+    /** @private */
+    this.queryString = "";
+
+    this.numInstances = undefined;
+
     var context = this;
 
     // Called whenever a change is made to the GraphBuilder -- either through drawing a custom structure or through clearStructure()
@@ -348,8 +353,7 @@ SearchBar.prototype.update = function() {
  * @returns {String} The text in the search bar
  */
 SearchBar.prototype.getValue = function() {
-    return searchBarInput;
-    // return $("#searchbar #bar input").val();
+    return this.queryString;
 };
 
 /**
@@ -358,7 +362,7 @@ SearchBar.prototype.getValue = function() {
  * @param {String} val The new value of the text in the search bar
  */
 SearchBar.prototype.setValue = function(val) {
-    $("#searchbar #bar input").val(val);
+    this.queryString = val;
     this.updateMode();
 };
 
@@ -463,6 +467,7 @@ SearchBar.prototype.clearResults = function() {
  * @see {@link SearchBar#clearResults}
  */
 SearchBar.prototype.clear = function() {
+    this.numInstances = undefined;
     this.clearStructure();
     this.clearText();
     this.clearResults();
@@ -569,7 +574,7 @@ SearchBar.prototype.query = function() {
         // For the network motifs search, motifs are only highlighted when a user clicks on an execution in the motifs tab
         // so countMotifs() should not be called during the initial search but during the on-click event in MotifDrawer.js
         $("#searchbar").addClass("results");
-        this.countMotifs();
+        return this.countMotifs();
     }
 
     function handleMotifResponse(response) {
@@ -657,22 +662,20 @@ SearchBar.prototype.getBuilderGraphFromJSON = function(json) {
   */
 SearchBar.prototype.countMotifs = function() {
     // Only compute and display the motif count if a search is being performed
-    if ($("#searchbar").hasClass("results")) {
-        var views = this.global.getActiveViews();
-        this.motifNavigator = new MotifNavigator();
-        this.motifNavigator.addMotif(views[0].getVisualModel(), views[0].getTransformer().getHighlightedMotif());
-        if (this.global.getPairwiseView()) {
-            this.motifNavigator.addMotif(views[1].getVisualModel(), views[1].getTransformer().getHighlightedMotif());
-        }
-        this.motifNavigator.start();
-    
-        var numMotifs = this.motifNavigator.getNumMotifs();
-        var numInstances = numMotifs + " instance";
-        if (numMotifs == 0 || numMotifs > 1) {
-            numInstances = numInstances.concat("s");
-        }
-        $("#numFound").text(numInstances + " in view");
+    var views = this.global.getActiveViews();
+    // console.log("views are ", views, views[0].getTransformer(), views[0].getTransformer().getHighlightedMotif());
+    if (views[0].getTransformer().getHighlightedMotif() === null) {
+        console.trace();
     }
+    this.motifNavigator = new MotifNavigator();
+    this.motifNavigator.addMotif(views[0].getVisualModel(), views[0].getTransformer().getHighlightedMotif());
+    if (this.global.getPairwiseView()) {
+        this.motifNavigator.addMotif(views[1].getVisualModel(), views[1].getTransformer().getHighlightedMotif());
+    }
+    this.motifNavigator.start();
+
+    this.numInstances = this.motifNavigator.getNumMotifs();
+    return this.numInstances;
 };
 
 /**

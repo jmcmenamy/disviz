@@ -239,9 +239,9 @@ function Controller(global) {
  * @param {MotifFinder} motifFinder
  * @see {@link HighlightMotifTransformation}
  */
-Controller.prototype.highlightMotif = function(motifFinder) {
+Controller.prototype.highlightMotif = function(motifFinder, lineToHighlight) {
     this.global.getViews().forEach(function(view) {
-        view.getTransformer().highlightMotif(motifFinder, false);
+        view.getTransformer().highlightMotif(motifFinder, false, lineToHighlight);
     });
 
     this.global.drawAll();

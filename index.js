@@ -23,16 +23,19 @@ import assert from 'assert';
 // Imported code uses these objects for front end things, so we make them chainable no-ops
 ['$', 'd3', 'window', 'document'].reduce(
   (proxy, prop) => globalThis[prop] = proxy, new Proxy(() => {}, {
-  // Intercepts property access, e.g. $().testing
-  get(target, prop, receiver) {
-    return receiver;
-  },
-  // Intercepts function calls, e.g. $()
-  apply() {
-    return $;
-  }
+    // Intercepts property access, e.g. $().testing
+    get(target, prop, receiver) {
+      return receiver;
+    },
+    // Intercepts function calls, e.g. $()
+    apply() {
+      return $;
+    }
 }));
-globalThis.searchBarInput = ""
+
+const bytesPerLine = 1605;
+// Arbitrarily request 400 lines assuming around 1605 bytes/line at the start
+const defaultWindowSize = 400*bytesPerLine;
 
 // console.log($().testing().hello.testing())
 
@@ -93,6 +96,10 @@ wss.on('connection', (ws) => {
               return await handleFilePathRequest(message);
             case "slideWindowRequest":
               return await handleSlideWindowRequest(message);
+            case "searchRequest":
+              return await handleSearchRequest(message);
+            case "nextResultRequest":
+              return await handleNextResultRequest(message);
         }
       } catch (err) {
         console.error("Error while processing message: ", err);
@@ -110,6 +117,69 @@ wss.on('connection', (ws) => {
   ws.on('error', (error) => {
     console.error('WebSocket error:', error);
   });
+
+  async function handleSearchRequest(message) {
+    console.log("Got searchRequest", message, message.queryString, typeof message.queryString);
+    const searchBar = SearchBar.getInstance();
+    if (message.clear) {
+      searchBar.clear();
+      ws.send(JSON.stringify({
+        id: message.id,
+        success: true,
+      }), (err) => {
+        if (err === null) {
+          console.log("sent successfully");
+          return
+        }
+        console.log("Got err when sending response: ", err);
+      });
+      console.log("Handled clear request");
+      return;
+    }
+    searchBar.setValue(message.queryString);
+    await searchBar.query();
+    message.delta = 1;
+    handleNextResultRequest(message);
+  }
+
+  async function handleNextResultRequest(message) {
+    const searchBar = SearchBar.getInstance();
+    const numInstances = searchBar.numInstances;
+    assert(numInstances !== undefined, "A search should be active to request next result");
+    const { offset, index, lineToHighlight } = message.delta > 0 ? searchBar.motifNavigator.next() : searchBar.motifNavigator.prev();
+    assert(offset < stats.size, `${offset} is greater than ${stats.size}`);
+    console.log("offset is ", offset, "index is ", index, message.delta);
+    let logs = undefined;
+    let startOffset = 0;
+    let endOffset = 0;
+    let searchSuccessful = false;
+    if (numInstances !== 0) {
+      searchSuccessful = true;
+      startOffset = Math.max(0, offset - bytesPerLine);
+      endOffset = Math.min(stats.size, offset + defaultWindowSize);
+      ({ bytesRead: endOffset, logs } = await slideWindow(startOffset, endOffset));
+      endOffset += startOffset;
+    }
+
+    console.log("Did query found", numInstances, 'instances, sending', startOffset, endOffset, index);
+
+    ws.send(JSON.stringify({
+      id: message.id,
+      logs: logs,
+      searchSuccessful: searchSuccessful,
+      index: index,
+      numInstances: numInstances,
+      startOffset: startOffset,
+      endOffset: endOffset,
+      lineToHighlight: lineToHighlight
+    }), (err) => {
+      if (err === null) {
+        console.log("sent successfully");
+        return
+      }
+      console.log("Got err when sending response: ", err);
+    });
+  }
 
 
   async function handleFilePathRequest(message) {
@@ -177,39 +247,51 @@ async function setNewFile(message) {
 
   // TODO update delimiterString and regexpString if needed
 
-  const fileText = await fs.promises.readFile(currentFilename, { encoding: 'utf-8'});
+  const sortedFileName = getSortedFilename(currentFilename);
+  let sortedFileText = await fs.promises.readFile(sortedFileName, { encoding: 'utf-8' }).catch(() => undefined );
 
-  // parse the logs like its done on the front end
-  Shiviz.getInstance().visualize(fileText, regexpString, delimiterString, sortType, descending);
+  if (sortedFileText === undefined) {
+    const fileText = await fs.promises.readFile(currentFilename, { encoding: 'utf-8'});
 
-  const hostPermutation = SearchBar.getInstance().getGlobal().getHostPermutation();
+    // parse the logs like its done on the front end
+    Shiviz.getInstance().visualize(fileText, regexpString, delimiterString, sortType, descending);
 
-  assert(hostPermutation.getGraphs().length >= 1, 'Found no graphs');
+    const hostPermutation = SearchBar.getInstance().getGlobal().getHostPermutation();
 
-  let sortedFileText = "";
-  for (const graph of hostPermutation.getGraphs()) {
-    if (sortedFileText !== "") {
-      sortedFileText += delimiterString;
-    }
-    const hosts = graph.getHosts();
-    assert(hosts.length >= 1);
-    // must call getNext first because first node is dummy node, see js_server/abstractGraph.js
-    let node = graph.getHead(hosts[0]).getNext();
-    console.log(node.logEvents.length, "log events lenght for head node")
-    for (const node of graph.getNodesTopologicallySorted()) {
-      for (const logEvent of node.getLogEvents()) {
-        sortedFileText += `${logEvent.getLogLine()}\n`
+    assert(hostPermutation.getGraphs().length >= 1, 'Found no graphs');
+
+    sortedFileText = "";
+    for (const graph of hostPermutation.getGraphs()) {
+      if (sortedFileText !== "") {
+        sortedFileText += delimiterString;
+      }
+      const hosts = graph.getHosts();
+      assert(hosts.length >= 1);
+      // must call getNext first because first node is dummy node, see js_server/abstractGraph.js
+      let node = graph.getHead(hosts[0]).getNext();
+      console.log(node.logEvents.length, "log events lenght for head node")
+      for (const node of graph.getNodesTopologicallySorted()) {
+        for (const logEvent of node.getLogEvents()) {
+          sortedFileText += `${logEvent.getLogLine()}\n`
+        }
       }
     }
+
+
+    sortedFileText = `${regexpString}\n\n${sortedFileText}`;
+    // TODO: Now check if this file exists before doing all this stuff
+    await fs.promises.writeFile(sortedFileName, sortedFileText, { encoding: 'utf8'});
+  } else {
+    console.log("Using existing sorted log file");
   }
 
+  currentFilename = sortedFileName;
 
-  // TODO: Now check if this file exists before doing all this stuff
-  currentFilename = getSortedFilename(currentFilename)
-  await fs.promises.writeFile(currentFilename, `${regexpString}\n\n${sortedFileText}`, { encoding: 'utf8'});
-
-  filehandle = await fs.promises.open(currentFilename, 'r');
+  filehandle = await fs.promises.open(sortedFileName, 'r');
   stats = await filehandle.stat();
+
+  Shiviz.getInstance().visualize(sortedFileText, regexpString, delimiterString, sortType, descending);
+
 
   // console.log(SearchBar.getInstance().getGlobal().getHostPermutation());
 }
@@ -306,7 +388,7 @@ async function slideWindow(startOffset, endOffset) {
   const readLength = adjustedEnd - adjustedStart;
   const finalBuffer = Buffer.alloc(readLength);
   const {bytesRead } = await filehandle.read(finalBuffer, 0, readLength, adjustedStart);
-  console.log("Returninig");
+  console.log("Returninig", bytesRead);
   return { bytesRead: bytesRead, logs: finalBuffer.toString('utf8')};
 }
 
