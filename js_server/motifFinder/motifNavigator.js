@@ -125,6 +125,26 @@ MotifNavigator.prototype.next = function() {
 };
 
 /**
+ * Jumps to the next motif. Motifs are ordered in ascending order of the
+ * y-coordinate of their top-most node. Thus, this method jumps to the motif
+ * with the next largest y-coordinate
+ */
+MotifNavigator.prototype.jump = function(index) {
+
+    if (!this.hasStarted) {
+        throw new Exception("MotifNavigator.prototype.next: You cannot call this method before invoking MotifNavigator.prototype.start");
+    }
+
+    this.index = index;
+
+    if (this.index >= this.getNumMotifs()) {
+        this.index = this.wrap ? 0 : this.getNumMotifs();
+    }
+
+    return this.handleCurrent();
+};
+
+/**
  * Jumps to the previous motif. Motifs are ordered in ascending order of the
  * y-coordinate of their top-most node. Thus, this method jumps to the motif
  * with the next smallest y-coordinate

@@ -99,6 +99,7 @@ wss.on('connection', (ws) => {
             case "searchRequest":
               return await handleSearchRequest(message);
             case "nextResultRequest":
+              // TODO Implement choose the next search result
               return await handleNextResultRequest(message);
         }
       } catch (err) {
@@ -146,7 +147,12 @@ wss.on('connection', (ws) => {
     const searchBar = SearchBar.getInstance();
     const numInstances = searchBar.numInstances;
     assert(numInstances !== undefined, "A search should be active to request next result");
-    const { offset, index, lineToHighlight } = message.delta > 0 ? searchBar.motifNavigator.next() : searchBar.motifNavigator.prev();
+    let offset, index, lineToHighlight;
+    if (message.index === undefined) {
+      ({ offset, index, lineToHighlight } = message.delta > 0 ? searchBar.motifNavigator.next() : searchBar.motifNavigator.prev());
+    } else {
+    ({ offset, index, lineToHighlight } = searchBar.motifNavigator.jump(message.index));
+    }
     assert(offset < stats.size, `${offset} is greater than ${stats.size}`);
     console.log("offset is ", offset, "index is ", index, message.delta);
     let logs = undefined;

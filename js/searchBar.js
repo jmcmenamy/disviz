@@ -65,7 +65,7 @@ function SearchBar() {
         }
     });
 
-    $("#searchbar #bar input").unbind("keydown.search").on("keydown.search", async function(e) {
+    $("#searchbar #bar > input").unbind("keydown.search").on("keydown.search", async function(e) {
         // Only act when panel is expanded
         if (!context.isPanelShown())
             return;
@@ -88,7 +88,7 @@ function SearchBar() {
         context.global.getController().bindScroll();
     });
 
-    $("#searchbar #bar input").on("input", function() {
+    $("#searchbar #bar > input").on("input", function() {
         context.clearResults();
         context.update();
     }).on("focus", function() {
@@ -144,6 +144,12 @@ function SearchBar() {
         context.getNextResultFromServer(-1);
         // context.motifNavigator.prev();
         // context.hidePanel();
+    });
+
+    $('#numFoundInput').on('keydown', function(event) {
+        if (event.key === 'Enter' && context.motifNavigator != null) {
+            context.getNextResultFromServer(undefined, parseInt($('#numFoundInput').val(), 10)-1);
+        }
     });
 
     // Event handler for switching between search options
@@ -256,7 +262,7 @@ SearchBar.prototype.getGlobal = function(global) {
 SearchBar.prototype.updateMode = function() {
     var value = this.getValue().trim();
 
-    $("#searchbar #bar input").css("color", "initial");
+    $("#searchbar #bar > input").css("color", "initial");
 
     if (value.length == 0) {
         this.mode = SearchBar.MODE_EMPTY;
@@ -326,7 +332,7 @@ SearchBar.prototype.update = function() {
         }
         catch (exception) {
             this.clearStructure();
-            $("#searchbar #bar input").css("color", "red");
+            $("#searchbar #bar > input").css("color", "red");
         }
         break;
 
@@ -353,7 +359,7 @@ SearchBar.prototype.update = function() {
  * @returns {String} The text in the search bar
  */
 SearchBar.prototype.getValue = function() {
-    return $("#searchbar #bar input").val();
+    return $("#searchbar #bar > input").val();
 };
 
 /**
@@ -362,7 +368,7 @@ SearchBar.prototype.getValue = function() {
  * @param {String} val The new value of the text in the search bar
  */
 SearchBar.prototype.setValue = function(val) {
-    $("#searchbar #bar input").val(val);
+    $("#searchbar #bar > input").val(val);
     this.updateMode();
 };
 
@@ -499,12 +505,13 @@ SearchBar.prototype.queryServer = async function() {
     await this.handleNextResuleFromServer(queryString, response);
 }
 
-SearchBar.prototype.getNextResultFromServer = async function(delta) {
+SearchBar.prototype.getNextResultFromServer = async function(delta, index) {
     // ask the server to perform this query,
     const queryString = this.getValue();
     const message = {
         type: "nextResultRequest",
         delta: delta,
+        index: index,
     };
     const promise = ws.sendWithRetry(message);
     const response = await promise;
@@ -523,7 +530,10 @@ SearchBar.prototype.handleNextResuleFromServer = async function(queryString, res
     this.motifNavigator.numInstances = response.numInstances;
     // this.motifNavigator.next();
     this.hidePanel();
-    $("#numFound").text(`${response.index+1}/${this.numInstances}`);
+    // $("#numFound").text(`${response.index+1}/${this.numInstances}`);
+    // $('#numFoundInput').prop('placeholder', `${response.index}`);
+    $("#numFoundInput").val(`${response.index+1}`)
+    $("#numFoundTotal").text(`/${this.numInstances}`)
     // var id = "#node" + motifData.id;
     // $(id)[0].dispatchEvent(new MouseEvent("mouseover"));
 }
@@ -554,7 +564,7 @@ SearchBar.prototype.query = async function(lineToHighlight) {
                 this.global.getController().highlightMotif(finder, lineToHighlight);
             }
             catch (exception) {
-                $("#searchbar #bar input").css("color", "red");
+                $("#searchbar #bar > input").css("color", "red");
                 return;
             }
             break;

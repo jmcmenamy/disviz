@@ -55,7 +55,7 @@ section:not(.home) {
   display: none;
 }
 
-input[type="text"], textarea, button {
+input[type="text"]:not(#numFoundInput), textarea, button {
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -75,7 +75,7 @@ input[type="text"], textarea, button {
   opacity: 0.5;
 }
 
-input, textarea {
+input:not(#numFoundInput), textarea {
   outline: none;
   border: 1px solid #aaa;
   padding: .4em;
@@ -498,7 +498,7 @@ section.input .left {
   width: 100%;
   z-index: 1;
 }
-#searchbar #bar input {
+#searchbar #bar > input {
   height: 24pt;
   font-size: 12pt;
   margin: 0;
@@ -507,19 +507,19 @@ section.input .left {
   padding-right: 24pt;
   border-right: none;
 }
-#searchbar #bar input.empty + .clear {
+#searchbar #bar > input.empty + .clear {
   display: none;
 }
-#searchbar #bar input:focus ~ #numFound {
+#searchbar #bar > input:focus ~ #numFound {
   border-color: #000;
 }
-#searchbar #bar input.focus ~ #numFound {
+#searchbar #bar > input.focus ~ #numFound {
   border-color: #000;
 }
-#searchbar #bar input:focus ~ button {
+#searchbar #bar > input:focus ~ button {
   border: 1px solid #000;
 }
-#searchbar #bar input.focus ~ button {
+#searchbar #bar > input.focus ~ button {
   border: 1px solid #000;
 }
 #searchbar #bar .clear {
@@ -577,9 +577,15 @@ section.input .left {
   margin-left: -1.5em;
 }
 
-#searchbar.results #bar input {
+#searchbar.results #bar > input {
   width: calc(100% - 140pt);
 }
+
+#numFoundInput {
+  width: 24pt;
+  /* display: inline-block; */
+}
+
 #searchbar.results #bar .clear {
   left: calc(100% - 180pt);
 }
