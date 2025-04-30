@@ -221,6 +221,7 @@ function Shiviz() {
           descending: $("#ordering option:selected").val().trim() == "descending",
           numBytes: context.endingOffset,
         };
+        context.startTime = performance.now();
         const response = await ws.sendWithRetry(message);
         // TODO normalize filePath vs filename
         context.currentFileSize = response.fileSize;
@@ -444,6 +445,9 @@ Shiviz.prototype.visualize = async function(log, regexpString, delimiterString, 
     catch (err) {
         this.handleException(err);
     }
+    const endTime = performance.now();
+    const elapsed = endTime - this.startTime;
+    console.log(`Visualization took ${elapsed} milliseconds`);
 };
 
 /**

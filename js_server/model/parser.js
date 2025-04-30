@@ -219,6 +219,7 @@ function ExecutionParser(rawString, label, regexp) {
         const encoder = new TextEncoder();
         let currentOffset = 0;
         const logLines = rawString.trim().split("\n");
+        console.log(`Number of logLines are ${logLines.length}`);
 
         for (let lineNum = 0; lineNum < logLines.length; lineNum ++) {
             const line = logLines[lineNum];

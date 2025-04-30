@@ -160,7 +160,7 @@ function ExecutionParser(rawString, label, regexp) {
         });
 
         var timestamp = parseStringTimestamp(clock, host, ln);
-        console.log("timestamp", timestamp, clock, host, ln);
+        // console.log("timestamp", timestamp, clock, host, ln);
         this.timestamps.push(timestamp);
         this.logEvents.push(new LogEvent(event, timestamp, ln, fields));
     }
