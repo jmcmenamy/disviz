@@ -39,7 +39,7 @@ function Transformer() {
     this.viewToDiffTransform = {};
 
     /** @private */
-    this.collapseSequentialNodesTransformation = new CollapseSequentialNodesTransformation(2);
+    this.collapseSequentialNodesTransformation = new CollapseSequentialNodesTransformation(Number.POSITIVE_INFINITY);
 
     /** @private */
     this.highlightHostTransformation = new HighlightHostTransformation();
@@ -344,7 +344,7 @@ Transformer.prototype.transform = function(visualModel) {
         trans.transform(visualModel);
     }
 
-    // console.log("IN TRANSFORMER.JS");
+    console.log("IN TRANSFORMER.JS");
     if (this.highlightMotifTransformation != null) {
         this.highlightMotifTransformation.transform(visualModel);
         this.highlighted = this.highlightMotifTransformation.getHighlighted();

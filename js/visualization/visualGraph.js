@@ -42,7 +42,7 @@ function VisualGraph(graph, layout, hostPermutation) {
         const shiviz = Shiviz.getInstance();
 
         // if request is pending from previous scroll event, do nothing
-        if (shiviz.serverRequestPending || SearchBar.getInstance().motifNavigator !== null) {
+        if (shiviz.serverRequestPending) {
             console.log("returning cause request active or search active");
             return;
         }
@@ -73,17 +73,23 @@ function VisualGraph(graph, layout, hostPermutation) {
             newEndOffset += offsetChange;
         }
 
-        if (newStartOffset < 0 || newEndOffset > shiviz.currentFileSize) {
-            console.log("Offsets are out of bounds, ignoring", newStartOffset, newEndOffset);
+        newStartOffset = Math.max(0, newStartOffset);
+        newEndOffset = Math.min(shiviz.currentFileSize, newEndOffset);
+        if ((nodeType === 'top' && newStartOffset >= shiviz.startingOffset) || (nodeType === 'bottom' && newEndOffset <= shiviz.endingOffset)) {
+            console.log("Offsets are out of bounds, ignoring", newStartOffset, newEndOffset, shiviz.startingOffset, shiviz.endingOffset);
             return;
         }
-        shiviz.slideWindow(newStartOffset, newEndOffset);
+        if (SearchBar.getInstance().motifNavigator !== null) {
+            shiviz.slideWindow(newStartOffset, newEndOffset, SearchBar.getInstance().getValue());
+        } else {
+            shiviz.slideWindow(newStartOffset, newEndOffset);
+        }
         // graph will be remade, so disconnect this observer
         console.log("Disconnecting");
         // intersectionObserver.disconnect();
     });
-    this.intersectionObserver.observe($("#top-sentinel")[0]);
-    this.intersectionObserver.observe($("#bottom-sentinel")[0]);
+    // this.intersectionObserver.observe($("#top-sentinel")[0]);
+    // this.intersectionObserver.observe($("#bottom-sentinel")[0]);
 
     this.graph.addObserver(AddNodeEvent, this, function(event, g) {
         g.addVisualNodeByNode(event.getNewNode());

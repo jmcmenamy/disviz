@@ -177,7 +177,7 @@ CollapseSequentialNodesTransformation.prototype.isExempt = function(node) {
  * @returns {Boolean} true if the node can be collapsed
  */
 CollapseSequentialNodesTransformation.isCollapseable = function(node, threshold) {
-    return false;
+    // return false;
     if (threshold < 2) {
         throw new Exception("CollapseSequentialNodesTransformation.isCollapseable: Invalid threshold. Threshold must be greater than or equal to 2");
     }

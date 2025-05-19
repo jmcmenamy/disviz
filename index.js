@@ -138,8 +138,10 @@ wss.on('connection', (ws) => {
       return;
     }
     searchBar.setValue(message.queryString);
+    console.log("Making query");
     await searchBar.query();
     message.delta = 1;
+    console.log("Made query, getting result");
     handleNextResultRequest(message);
   }
 
@@ -155,6 +157,7 @@ wss.on('connection', (ws) => {
     }
     assert(offset < stats.size, `${offset} is greater than ${stats.size}`);
     console.log("offset is ", offset, "index is ", index, message.delta);
+    // let adjustedStart;
     let logs = undefined;
     let startOffset = 0;
     let endOffset = 0;
@@ -163,7 +166,8 @@ wss.on('connection', (ws) => {
       searchSuccessful = true;
       startOffset = Math.max(0, offset - bytesPerLine);
       endOffset = Math.min(stats.size, offset + defaultWindowSize);
-      ({ bytesRead: endOffset, logs } = await slideWindow(startOffset, endOffset));
+      ({ bytesRead: endOffset, logs, adjustedStart: startOffset } = await slideWindow(startOffset, endOffset));
+
       endOffset += startOffset;
     }
 
@@ -193,14 +197,14 @@ wss.on('connection', (ws) => {
     await setNewFile(message);
     // TODO: Send the filesize so they know ending offset,
     // TODO: Send the new starting and ending offsets
-    const { bytesRead, logs } = await slideWindow(0, message.numBytes);
+    const { bytesRead, logs, adjustedStart } = await slideWindow(0, message.numBytes);
     console.log("For filesize returning ", stats.size)
     ws.send(JSON.stringify({
       id: message.id,
       logs: logs,
       filePath: currentFilename,
       fileSize: stats.size,
-      startOffset: 0,
+      startOffset: adjustedStart,
       endOffset: bytesRead,
     }), (err) => {
       if (err === null) {
@@ -218,14 +222,14 @@ wss.on('connection', (ws) => {
     const endOffset = Math.min(stats.size, message.endOffset);
     console.log("Intermediate offsets", startOffset, endOffset, stats, message.endOffset);
     // bound the offsets we look for
-    const { bytesRead, logs } = await slideWindow(
+    const { bytesRead, logs, adjustedStart } = await slideWindow(
       startOffset,
       endOffset
     )
     ws.send(JSON.stringify({
       id: message.id,
       logs: logs,
-      startOffset: startOffset,
+      startOffset: adjustedStart,
       endOffset: startOffset + bytesRead
     }), (err) => {
       if (err === null) {
@@ -395,7 +399,7 @@ async function slideWindow(startOffset, endOffset) {
   const finalBuffer = Buffer.alloc(readLength);
   const {bytesRead } = await filehandle.read(finalBuffer, 0, readLength, adjustedStart);
   console.log("Returninig", bytesRead);
-  return { bytesRead: bytesRead, logs: finalBuffer.toString('utf8')};
+  return { bytesRead: bytesRead, logs: finalBuffer.toString('utf8'), adjustedStart: adjustedStart};
 }
 
 

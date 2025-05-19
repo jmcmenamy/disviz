@@ -480,6 +480,8 @@ SearchBar.prototype.query = function() {
     this.updateMode();
     var searchbar = this;
 
+    console.log("in query");
+
     try {
         switch (this.mode) {
         case SearchBar.MODE_EMPTY:
@@ -497,8 +499,10 @@ SearchBar.prototype.query = function() {
                 var builderGraph = this.getBuilderGraphFromJSON(json);
                 var finder = new CustomMotifFinder(builderGraph);
                 this.global.getController().highlightMotif(finder);
+                console.log("got here in search?");
             }
             catch (exception) {
+                console.log("Got exception: ", exception);
                 $("#searchbar #bar input").css("color", "red");
                 return;
             }
@@ -565,6 +569,7 @@ SearchBar.prototype.query = function() {
         }
     }
     catch (e) {
+        console.log("error is ", e);
         Shiviz.getInstance().handleException(e);
     }
     if (this.mode != SearchBar.MODE_MOTIF) {
@@ -574,6 +579,7 @@ SearchBar.prototype.query = function() {
         // For the network motifs search, motifs are only highlighted when a user clicks on an execution in the motifs tab
         // so countMotifs() should not be called during the initial search but during the on-click event in MotifDrawer.js
         $("#searchbar").addClass("results");
+        console.log("Counting motifs?");
         return this.countMotifs();
     }
 
@@ -675,6 +681,7 @@ SearchBar.prototype.countMotifs = function() {
     this.motifNavigator.start();
 
     this.numInstances = this.motifNavigator.getNumMotifs();
+    console.log("set num instances to ", this.numInstances)
     return this.numInstances;
 };
 

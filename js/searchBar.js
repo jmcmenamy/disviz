@@ -474,6 +474,9 @@ SearchBar.prototype.clearResults = function() {
  */
 SearchBar.prototype.clear = async function(shouldClearServer) {
     console.log("CALLING CLEAR FOR SOME REASON");
+    if (shouldClearServer === false) {
+        return;
+    }
     if (shouldClearServer || shouldClearServer === undefined) {
         const message = {
             type: "searchRequest",
@@ -502,6 +505,7 @@ SearchBar.prototype.queryServer = async function() {
     };
     const promise = ws.sendWithRetry(message);
     const response = await promise;
+    console.log("got response, calling handleNExtResuleFromServer");
     await this.handleNextResuleFromServer(queryString, response);
 }
 
@@ -525,6 +529,7 @@ SearchBar.prototype.handleNextResuleFromServer = async function(queryString, res
     }
     this.setValue(queryString);
     // console.log("line to highlight from server is ", response.lineToHighlight)
+    console.log("Making same query", this.getValue(), "line to highlight", response.lineToHighlight);
     this.query(response.lineToHighlight);
     this.numInstances = response.numInstances;
     this.motifNavigator.numInstances = response.numInstances;
@@ -532,8 +537,8 @@ SearchBar.prototype.handleNextResuleFromServer = async function(queryString, res
     this.hidePanel();
     // $("#numFound").text(`${response.index+1}/${this.numInstances}`);
     // $('#numFoundInput').prop('placeholder', `${response.index}`);
-    $("#numFoundInput").val(`${response.index+1}`)
-    $("#numFoundTotal").text(`/${this.numInstances}`)
+    $("#numFoundInput").val(`${response.index+1}`);
+    $("#numFoundTotal").text(`/${this.numInstances}`);
     // var id = "#node" + motifData.id;
     // $(id)[0].dispatchEvent(new MouseEvent("mouseover"));
 }
@@ -543,7 +548,11 @@ SearchBar.prototype.handleNextResuleFromServer = async function(queryString, res
  */
 SearchBar.prototype.query = async function(lineToHighlight) {
 
+    // this.updateMode();
+
     var searchbar = this;
+
+    console.log("Making query", this.mode);
 
     try {
         switch (this.mode) {
@@ -564,6 +573,7 @@ SearchBar.prototype.query = async function(lineToHighlight) {
                 this.global.getController().highlightMotif(finder, lineToHighlight);
             }
             catch (exception) {
+                console.log("Got exception", exception);
                 $("#searchbar #bar > input").css("color", "red");
                 return;
             }
@@ -736,7 +746,7 @@ SearchBar.prototype.countMotifs = function() {
             this.motifNavigator.addMotif(views[1].getVisualModel(), views[1].getTransformer().getHighlightedMotif());
         }
         this.motifNavigator.start();
-    
+        console.log("local num found is ", this.motifNavigator.getNumMotifs());
         // var numMotifs = this.motifNavigator.getNumMotifs();
         // var numInstances = numMotifs + " instance";
         // if (numMotifs == 0 || numMotifs > 1) {

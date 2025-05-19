@@ -126,6 +126,7 @@ LEMInterpreter.prototype.visitBinaryOp = function(ast, env) {
 LEMInterpreter.prototype.visitIdentifier = function(ast, env) {
     var name = ast.getName();
     if (!env.hasOwnProperty(name)) {
+        return new LEMInterpreterValue(LEMInterpreterValue.STRING, "");
         throw new Exception("Unbound identifier: " + name);
     }
     return new LEMInterpreterValue(LEMInterpreterValue.STRING, env[name]);

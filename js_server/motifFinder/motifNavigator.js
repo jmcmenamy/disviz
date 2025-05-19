@@ -58,6 +58,7 @@ MotifNavigator.prototype.addMotif = function(visualGraph, motifGroup) {
             var node = nodes[i];
             if (offset === undefined) {
                 const event = node.getLogEvents()[0];
+                console.log(`in node in motif nav. numNodes: ${node.getLogEvents().length}, event: ${event.text}, line; ${event.logLine}`)
                 offset = event.getOffset();
                 lineToHighlight = event.getLogLine();
             }
@@ -171,7 +172,7 @@ MotifNavigator.prototype.prev = function() {
  */
 MotifNavigator.prototype.handleCurrent = function() {
     if (this.index >= this.getNumMotifs() || this.index < 0) {
-        return;
+        return { offset: 0, index: 0, lineToHighlight: undefined };
     }
 
     var motifData = this.motifDatas[this.index];

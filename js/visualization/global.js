@@ -279,6 +279,24 @@ Global.prototype.drawAll = function() {
     });
     
     this.viewL.draw("L");
+    const sentinelCss = {
+        width: '1px',
+        height: '1px',
+        position: 'absolute',
+        // backgroundColor: 'blue',
+        zIndex: 100
+    }
+    const $topSentinel = $('<div>', {
+        id: 'top-sentinel',
+        css: sentinelCss,
+        'data-node-type': 'top'
+      });
+      const $bottomSentinel = $('<div>', {
+        id: 'bottom-sentinel',
+        css: sentinelCss,
+        'data-node-type': 'bottom'
+      });
+    this.$vizContainer.append($topSentinel);
     this.$vizContainer.append(this.viewL.getSVG());
     this.$hostBar.append(this.viewL.getHostSVG());
     this.$logTable.append(this.viewL.getLogTable());
@@ -302,7 +320,11 @@ Global.prototype.drawAll = function() {
         this.$logTable.append(this.viewR.getLogTable());
         this.controller.bindLines(this.viewR.getLogTable().find(".line:not(.more)"));
     }
-
+    this.$vizContainer.append($bottomSentinel);
+    // observe the sentinels
+    // console.log("sentinels", $("#top-sentinel")[0], $("#bottom-sentinel")[0])
+    this.viewL.visualGraph.intersectionObserver.observe($("#top-sentinel")[0]);
+    this.viewL.visualGraph.intersectionObserver.observe($("#bottom-sentinel")[0]);
     this.$vizContainer.height("auto");
     $(".dialog").hide();
     $(".hostConstraintDialog").hide();

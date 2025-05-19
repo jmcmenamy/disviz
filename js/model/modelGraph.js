@@ -123,13 +123,13 @@ function ModelGraph(logEvents) {
         }
 
         // designate which nodes will need to be observed with intersection observer
-        const startIdx = Math.floor(mostEvents.length/4);
-        const endIdx = Math.floor(mostEvents.length*3/4);
+        // const startIdx = Math.floor(mostEvents.length/4);
+        // const endIdx = Math.floor(mostEvents.length*3/4);
 
-        mg.shouldObserveNode(mostEvents[1], 'top');
-        mg.shouldObserveNode(mostEvents[startIdx], 'top');
-        mg.shouldObserveNode(mostEvents[mostEvents.length-2], 'bottom');
-        mg.shouldObserveNode(mostEvents[endIdx], 'bottom');
+        // mg.shouldObserveNode(mostEvents[0], 'top');
+        // mg.shouldObserveNode(mostEvents[startIdx], 'top');
+        // mg.shouldObserveNode(mostEvents[mostEvents.length-2], 'bottom');
+        // mg.shouldObserveNode(mostEvents[mostEvents.length-1], 'bottom');
     }
 
     // Generates parent and child connections
@@ -391,6 +391,9 @@ ModelGraph.prototype.clone = function() {
  * @param {ModelNode} node
  */
 ModelGraph.prototype.shouldObserveNode = function (node, nodeType) {
+    if (node === undefined) {
+        return
+    }
     this.nodesToObserve.add(node);
     node.shouldObserve = true;
     node.nodeType = nodeType;

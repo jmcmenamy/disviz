@@ -86,7 +86,16 @@ HighlightMotifTransformation.prototype.transform = function(model) {
                 console.log("Making node", visualNode.getId(), "bigger");
                 var id = "#node" + visualNode.getId();
                 // make this node appear bigger
-                queueMicrotask(() => $(id)[0].dispatchEvent(new MouseEvent("mouseover")));
+                queueMicrotask(() => {
+                    $(id)[0].dispatchEvent(new MouseEvent("mouseover"));
+                    console.log("Scrolling", visualNode.getY());
+                    $(window).scrollTop(Math.max(0, $(id).offset().top - 4*MotifNavigator.TOP_SPACING));
+                    // $(window).scrollTop(Math.max(0, visualNode.getY() - MotifNavigator.TOP_SPACING));
+                });
+
+                // var position = motifData.getTop() - MotifNavigator.TOP_SPACING;
+                // position = Math.max(0, position);
+                // $(window).scrollTop(position);
                 // $(id)[0].dispatchEvent(new MouseEvent("mouseover"));
                 break;
             }

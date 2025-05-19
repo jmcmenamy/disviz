@@ -134,6 +134,7 @@ function ExecutionParser(rawString, label, regexp) {
     this.logEvents = [];
 
     if (regexp.isZap()) {
+        console.log("parsing zap logs");
         parseZapLogs(this.timestamps, this.logEvents);
 
         if (this.logEvents.length == 0) {
@@ -196,12 +197,15 @@ function ExecutionParser(rawString, label, regexp) {
             }
         }
     
-        parseJsonTimestamp(clock, hostString)
+        return parseJsonTimestamp(clock, hostString)
     }
 
     function parseJsonTimestamp(clock, hostString, line) {
         try {
             var ret = new VectorTimestamp(clock, hostString);
+            if (ret === undefined) {
+                console.log("returning undefined timestamp?", clock, hostString, line);
+            }
             return ret;
         }
         catch (exception) {
@@ -235,13 +239,25 @@ function ExecutionParser(rawString, label, regexp) {
             const clock = logObject.VCString
 
             // console.log(clock, lineNum)
+            const convertVal = (val) => {
+                if (val !== null && typeof val === 'object') {
+                    return JSON.stringify(val, null, 2)
+                }
+                if (typeof val !== 'string') {
+                    return val.toString()
+                }
+                return val
+            }
 
             // console.log("Log Entry:");
             Object.entries(logObject).forEach(([key, value]) => {
-                // console.log(`${key}:`, value);
                 if (!['processId', 'message', 'VCString'].includes(key)) {
-                    fields[key] = value
+                    fields[convertVal(key)] = convertVal(value)
                 }
+                // console.log(`${key}:`, value);
+                // if (!['processId', 'message', 'VCString'].includes(key)) {
+                //     fields[key] = value
+                // }
                 // if (key === 'stacktrace') {
                 //     console.log('stackstrace');
                 //     console.log(JSON.stringify(value))
@@ -250,6 +266,7 @@ function ExecutionParser(rawString, label, regexp) {
 
             var timestamp = parseJsonTimestamp(clock, host, line);
             timestamps.push(timestamp);
+            // if (line.includes(event))
             logEvents.push(new LogEvent(event, timestamp, lineNum, fields, line, currentOffset));
             currentOffset += encoder.encode(line + '\n').length;
         }

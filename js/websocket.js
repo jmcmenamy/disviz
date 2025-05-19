@@ -50,7 +50,7 @@ function connect() {
 
   ws.sendWithRetry = function (message) {
     if (ws.readyState !== WebSocket.OPEN) {
-      return new Promise(resolve => setTimeout(() => resolve(ws.sendWithRetry(message)), reconnectDelay));
+      return new Promise((resolve, reject) => setTimeout(() => ws.sendWithRetry(message).then(resolve, reject), reconnectDelay));
     }
     let { promise, resolve, reject } = Promise.withResolvers();
     // display error to user if any occurs
@@ -58,15 +58,14 @@ function connect() {
       const exception = new Exception(reason, true);
       Shiviz.getInstance().handleException(exception);
     });
-    const requestId = generateRequestId();
-    message.id = requestId;
+    message.id = generateRequestId();
     // Save the resolver so we can call it when the response comes back.
-    pendingRequests[requestId] = { resolve, reject };
+    pendingRequests[message.id] = { resolve, reject };
     setTimeout(() => {
         if (pendingRequests[message.id]) {
-            pendingRequests[message.id].reject(`Response not received from server within ${requestTimeout} seconds, retrying`);
+            console.log(`Response not received from server within ${requestTimeout} seconds, retrying`);
             delete pendingRequests[message.id];
-            resolve(ws.sendWithRetry(message));
+            ws.sendWithRetry(message).then(resolve, reject);
         }
     }, requestTimeout);
     console.log("Sending request", message.type);

@@ -541,7 +541,7 @@ Shiviz.prototype.handleException = function(err) {
     throw new Error(err.getMessage());
 };
 
-Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
+Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset, queryString) {
     if (this.serverRequestPending) {
         // console.log("Request already pending, returning");
         return;
@@ -565,7 +565,12 @@ Shiviz.prototype.slideWindow = async function(newStartOffset, newEndOffset) {
         this.serverRequestPending = false;
         return;
     }
-    await this.handleLogsFromServer(response);
+    await this.handleLogsFromServer(response, false);
+    if (queryString) {
+        console.log('views', SearchBar.getInstance().global.getActiveViews(), SearchBar.getInstance().global.getActiveViews()[0].getTransformer(), SearchBar.getInstance().global.getActiveViews()[0].getTransformer().getHighlightedMotif());
+        // SearchBar.getInstance().setValue(queryString);
+        SearchBar.getInstance().query(queryString);
+    }
 }
 
 Shiviz.prototype.handleLogsFromServer = async function(response, shouldClearSearchOnServer) {

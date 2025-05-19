@@ -231,15 +231,19 @@ function ExecutionParser(rawString, label, regexp) {
             const clock = logObject.VCString
 
 
+            const convertVal = (val) => {
+                if (val !== null && typeof val === 'object') {
+                    return JSON.stringify(val, null, 2)
+                }
+                if (typeof val !== 'string') {
+                    return val.toString()
+                }
+                return val
+            }
+
             Object.entries(logObject).forEach(([key, value]) => {
-                if (typeof key !== 'string') {
-                    key = key.toString()
-                }
-                if (typeof value !== 'string') {
-                    value = value.toString()
-                }
                 if (!['processId', 'message', 'VCString'].includes(key)) {
-                    fields[key] = value
+                    fields[convertVal(key)] = convertVal(value)
                 }
             });
 
