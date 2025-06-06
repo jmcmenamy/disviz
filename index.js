@@ -37,8 +37,6 @@ const bytesPerLine = 1605;
 // Arbitrarily request 400 lines assuming around 1605 bytes/line at the start
 const defaultWindowSize = 400*bytesPerLine;
 
-// console.log($().testing().hello.testing())
-
 
 function loadGlobalScript(filename) {
   const filePath = path.join(__dirname, filename);
