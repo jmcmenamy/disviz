@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="canonical" href="http://bestchai.bitbucket.io/shiviz/">
+    <!-- <link rel="canonical" href="http://bestchai.bitbucket.io/shiviz/"> -->
     <link rel="shortcut icon" href="images/favico.ico" type="image/x-icon" />
     <title>DisViz</title>
     <link href="css/style.css" type="text/css" rel="stylesheet">
@@ -213,30 +213,34 @@
                 <pre>(?&lt;date&gt;\d\d/\d\d/\d\d \d\d:\d\d (AM|PM)) (?&lt;event&gt;.*)\n(?&lt;host&gt;\w+) (?&lt;clock&gt;\{.*\})</pre>
             </p>
             <p>
-              DisViz extends and modifies ShiViz. The capture groups in ShiViz is not standard regexp
+              DisViz extends and modifies <a href="https://github.com/DistributedClocks/shiviz">ShiViz</a>. The capture groups in ShiViz is not standard regexp
               syntax. We recommend using a plain
               <a href="https://www.debuggex.com/">JS regexp tester</a>
               with regular capture groups to develop expressions, and
               name the capture groups afterwards.
             </p>
 
-            <h3>How can I generate logs to use with ShiViz?</h3>
+            <h3>How can I generate logs to use with DisViz?</h3>
             <p>
-              We developed several ShiViz-compatible vector-clock
+              The ShiViz authors developed several ShiViz-compatible vector-clock
               instrumentation <a href="https://distributedclocks.github.io/">libraries</a>
               for C/C++/Java/Go systems.
+
             </p>
             <p>
-              In general, you can study the execution of any system
-              that produces logs in a format that can be parsed using
-              the RegExp mechanism above.
+              This <a href="https://github.com/jmcmenamy/GoVector">fork of GoVector</a> provides a way to generate DisViz-compatible logs using Go.
+            </p>
+            <p>
+              In general, the format of DisViz logs is simple; two newlines followed by valid JSON logs on each line.
+              Each JSON log should at least have fields with the names 'processId', 'message', and 'VCString' in order for the visualization to render properly.
             </p>
 
             <h3>More information</h3>
               <ul>
-                <li><a href="https://bitbucket.org/bestchai/shiviz/src">ShiViz source code</a></li>
-                <li>Contact: <a href="http://www.cs.ubc.ca/~bestchai/">Ivan Beschastnikh</a>, bestchai@cs.ubc.ca</li>
-                <li><a href="http://homes.cs.washington.edu/~mernst/pubs/debug-distributed-cacm2016-abstract.html">How to cite</a></li>
+                <li><a href="https://github.com/jmcmenamy/disviz">DisViz source code</a></li>
+                <li><a href="https://github.com/DistributedClocks/shiviz">ShiViz source code</a></li>
+                <li><a href="https://github.com/jmcmenamy/disviz">How to cite DisViz</a></li>
+                <li><a href="http://homes.cs.washington.edu/~mernst/pubs/debug-distributed-cacm2016-abstract.html">How to cite ShiViz</a></li>
               </ul>
         </div>
         <div class="shivizexample">
