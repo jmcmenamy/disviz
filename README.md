@@ -22,7 +22,7 @@ DisViz uses a Node process as a server, which parses the entire log file and com
 
 To start the server, run `npm start` from the cloned repo.
 
-Paste a filepath to the JSON log file you want to visualize. You can hide processes, search for text matches and communication patterns, and inspect individual log events:
+Paste the filepath of the JSON log file you want to visualize. The format should be two initial newline characters followed by one JSON log entry per line. Each log must have the fields `'processId'`, `'message'`, and `'VCString'`. You can hide processes, search for text matches and communication patterns, and inspect individual log events:
 
 <img src="https://raw.githubusercontent.com/jmcmenamy/meng_project/main/thesis/installed_snapshot.png" alt="Diagram" style="width:80%;"/>
 
