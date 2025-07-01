@@ -3,11 +3,11 @@
 
 name: Run tests
 
-on:
-  push:
-    branches: "**"
-  pull_request:
-    branches: [ master ]
+on: [workflow_dispatch_disabled]
+  # push:
+  #   branches: "**"
+  # pull_request:
+  #   branches: [ master ]
 
 jobs:
   build:

@@ -8,7 +8,7 @@ DisViz is built off and extends [ShiViz](https://github.com/DistributedClocks/sh
 
 See Section 3.3 (page 33) of my [thesis](https://github.com/jmcmenamy/meng_project/blob/main/thesis/Josiah_MEng_Thesis.pdf) for a description of DisViz, or just clone this repo and run it. The best way to learn the tool is to use it!
 
-[GoVector](https://github.com/jmcmenamy/GoVector) is a logging library that can be used to generate DisViz-compatible JSON logs. See [this repo](https://github.com/jmcmenamy/meng_project) for a description of how to use these tools together.
+[GoVector](https://jmcmenamy.github.io/GoVector/) is a logging library that can be used to generate DisViz-compatible JSON logs. See [this repo](https://jmcmenamy.github.io/meng_project/) for a description of how to use these tools together.
 
 ### Installation
 
@@ -30,11 +30,11 @@ Paste the filepath of the JSON log file you want to visualize. The format should
 
 The reason for making a fork of the original [ShiViz](https://github.com/DistributedClocks/shiviz) was to make it easier to interact with large log files, and to add flexibility when adding information to individual log statements.
 
-DisViz was built as part of my [MEng](https://github.com/jmcmenamy/meng_project), see Chapter 3 (page 28) of the [thesis](https://github.com/jmcmenamy/meng_project/blob/main/thesis/Josiah_MEng_Thesis.pdf) for a thorough description of the tool. See Chapter 6 (page 58) for examples of debugging Raft bugs with this tool; Section 6.3 walks through debugging a snapshotting bug that I never found when I first took [6.5840](https://pdos.csail.mit.edu/6.824/)!
+DisViz was built as part of my [MEng](https://jmcmenamy.github.io/meng_project/), see Chapter 3 (page 28) of the [thesis](https://github.com/jmcmenamy/meng_project/blob/main/thesis/Josiah_MEng_Thesis.pdf) for a thorough description of the tool. See Chapter 6 (page 58) for examples of debugging Raft bugs with this tool; Section 6.3 walks through debugging a snapshotting bug that I never found when I first took [6.5840](https://pdos.csail.mit.edu/6.824/)!
 
 ### Modifying DisViz
 
-I have not sufficiently tested DisViz beyond the capabilities required for my [MEng](https://github.com/jmcmenamy/meng_project/). There are many opinionated pieces of the implementation, and I'm sure there are bugs lurking around.
+I have not sufficiently tested DisViz beyond the capabilities required for my [MEng](https://jmcmenamy.github.io/meng_project/). There are many opinionated pieces of the implementation, and I'm sure there are bugs lurking around.
 
 If you find a bug or want a feature that doesn't exist, feel free to create an [issue](https://github.com/jmcmenamy/disviz/issues) or make a [pull request](https://github.com/jmcmenamy/disviz/pulls)!
 
