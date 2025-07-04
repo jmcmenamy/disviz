@@ -1,0 +1,27 @@
+<h1 dir="auto">DisViz</h1>
+<p dir="auto">DisViz is a visualization tool for studying executions of distributed systems. It produces a time-space diagram by parsing a JSON log file:</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/jmcmenamy/meng_project/main/thesis/commit_communication.png"><img src="https://raw.githubusercontent.com/jmcmenamy/meng_project/main/thesis/commit_communication.png" alt="DisViz time space diagram" style="max-width: 100%;"></a></p>
+<p dir="auto">DisViz is built off and extends <a href="https://github.com/DistributedClocks/shiviz">ShiViz</a>. See their README for a description of their tool, and their <a href="https://github.com/DistributedClocks/shiviz/wiki">Wiki</a> for an in-depth introduction.</p>
+<p dir="auto">See Section 3.3 (page 33) of my <a href="https://github.com/jmcmenamy/meng_project/blob/main/thesis/Josiah_MEng_Thesis.pdf">thesis</a> for a description of DisViz, or just clone this repo and run it. The best way to learn the tool is to use it!</p>
+<p dir="auto"><a href="https://jmcmenamy.github.io/GoVector/" rel="nofollow">GoVector</a> is a logging library that can be used to generate DisViz-compatible JSON logs. See <a href="https://jmcmenamy.github.io/meng_project/" rel="nofollow">this repo</a> for a description of how to use these tools together.</p>
+<h3 dir="auto">Installation</h3>
+<p dir="auto">To run this project, you'll need Node.js. You can download it from the <a href="https://nodejs.org/en/download/" rel="nofollow">Node.js website</a>.</p>
+<p dir="auto">After that, just clone this repo and you're good to go!</p>
+<h3 dir="auto">Usage</h3>
+<p dir="auto">DisViz uses a Node process as a server, which parses the entire log file and communicates with the browser to show a subset of the log file at a given time.</p>
+<p dir="auto">To start the server, run <code class="notranslate">npm start</code> from the cloned repo.</p>
+<p dir="auto">Paste the filepath of the JSON log file you want to visualize. The format should be two initial newline characters followed by one JSON log entry per line. Each log must have the fields <code class="notranslate">'processId'</code>, <code class="notranslate">'message'</code>, and <code class="notranslate">'VCString'</code>. You can hide processes, search for text matches and communication patterns, and inspect individual log events:</p>
+<p dir="auto"><a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/jmcmenamy/meng_project/main/thesis/installed_snapshot.png"><img src="https://raw.githubusercontent.com/jmcmenamy/meng_project/main/thesis/installed_snapshot.png" alt="Diagram" style="max-width: 100%;"></a></p>
+<h3 dir="auto">Motivation</h3>
+<p dir="auto">The reason for making a fork of the original <a href="https://github.com/DistributedClocks/shiviz">ShiViz</a> was to make it easier to interact with large log files, and to add flexibility when adding information to individual log statements.</p>
+<p dir="auto">DisViz was built as part of my <a href="https://jmcmenamy.github.io/meng_project/" rel="nofollow">MEng</a>, see Chapter 3 (page 28) of the <a href="https://github.com/jmcmenamy/meng_project/blob/main/thesis/Josiah_MEng_Thesis.pdf">thesis</a> for a thorough description of the tool. See Chapter 6 (page 58) for examples of debugging Raft bugs with this tool; Section 6.3 walks through debugging a snapshotting bug that I never found when I first took <a href="https://pdos.csail.mit.edu/6.824/" rel="nofollow">6.5840</a>!</p>
+<h3 dir="auto">Modifying DisViz</h3>
+<p dir="auto">I have not sufficiently tested DisViz beyond the capabilities required for my <a href="https://jmcmenamy.github.io/meng_project/" rel="nofollow">MEng</a>. There are many opinionated pieces of the implementation, and I'm sure there are bugs lurking around.</p>
+<p dir="auto">If you find a bug or want a feature that doesn't exist, feel free to create an <a href="https://github.com/jmcmenamy/disviz/issues">issue</a> or make a <a href="https://github.com/jmcmenamy/disviz/pulls">pull request</a>!</p>
+<p dir="auto">If you use DisViz in academic work, you can cite the following:</p>
+<div class="highlight highlight-text-bibtex" dir="auto"><pre class="notranslate"><span class="pl-k">@misc</span>{<span class="pl-en">mcmenamy2025disviz</span>,
+  <span class="pl-s">author</span> = <span class="pl-s"><span class="pl-pds">{</span>Josiah McMenamy<span class="pl-pds">}</span></span>,
+  <span class="pl-s">title</span> = <span class="pl-s"><span class="pl-pds">{</span>DisViz: Visualizing real-world distributed system logs with space time diagrams<span class="pl-pds">}</span></span>,
+  <span class="pl-s">year</span> = <span class="pl-s"><span class="pl-pds">{</span>2025<span class="pl-pds">}</span></span>,
+  <span class="pl-s">howpublished</span> = <span class="pl-s"><span class="pl-pds">{</span>\url{https://github.com/jmcmenamy/meng_project/blob/main/thesis/Josiah_MEng_Thesis.pdf}<span class="pl-pds">}</span></span>
+}</pre></div>
